@@ -8,6 +8,6 @@
     "\\source\\dxgi",
     "\\source\\windows"
   ],
-  "SelectedNode": "\\source\\dxgi\\dxgi_device.cpp",
+  "SelectedNode": "\\source\\windows\\user32.cpp",
   "PreviewInSolutionExplorer": false
 }

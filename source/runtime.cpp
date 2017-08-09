@@ -19,6 +19,22 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
+#ifdef _WIN64
+#pragma comment (lib, "SpecialK64.lib")
+#else
+#pragma comment (lib, "SpecialK32.lib")
+#endif
+
+void
+__stdcall
+SK_ImGui_DrawCallback (void* user);
+
+typedef void (__stdcall *SK_ImGui_DrawCallback_pfn)(void *user);
+
+IMGUI_API
+void
+SK_ImGui_InstallDrawCallback (SK_ImGui_DrawCallback_pfn fn, void* user);
+
 namespace reshade
 {
 	filesystem::path runtime::s_reshade_dll_path, runtime::s_target_executable_path;
@@ -27,8 +43,7 @@ namespace reshade
 		_renderer_id(renderer),
 		_start_time(std::chrono::high_resolution_clock::now()),
 		_last_frame_duration(std::chrono::milliseconds(1)),
-		_imgui_context(ImGui::CreateContext()),
-		_imgui_font_atlas(std::make_unique<ImFontAtlas>()),
+		//_imgui_font_atlas(std::make_unique<ImFontAtlas>()),
 		_effect_search_paths({ s_reshade_dll_path.parent_path() }),
 		_texture_search_paths({ s_reshade_dll_path.parent_path() }),
 		_preprocessor_definitions({
@@ -42,52 +57,50 @@ namespace reshade
 		_screenshot_path(s_target_executable_path.parent_path()),
 		_variable_editor_height(300)
 	{
-		ImGui::SetCurrentContext(_imgui_context);
+		auto &imgui_io = ImGui::GetIO ();
 
-		auto &imgui_io = _imgui_context->IO;
-		auto &imgui_style = _imgui_context->Style;
-		imgui_io.Fonts = _imgui_font_atlas.get();
-		imgui_io.IniFilename = nullptr;
-		imgui_io.KeyMap[ImGuiKey_Tab] = 0x09; // VK_TAB
-		imgui_io.KeyMap[ImGuiKey_LeftArrow] = 0x25; // VK_LEFT
-		imgui_io.KeyMap[ImGuiKey_RightArrow] = 0x27; // VK_RIGHT
-		imgui_io.KeyMap[ImGuiKey_UpArrow] = 0x26; // VK_UP
-		imgui_io.KeyMap[ImGuiKey_DownArrow] = 0x28; // VK_DOWN
-		imgui_io.KeyMap[ImGuiKey_PageUp] = 0x21; // VK_PRIOR
-		imgui_io.KeyMap[ImGuiKey_PageDown] = 0x22; // VK_NEXT
-		imgui_io.KeyMap[ImGuiKey_Home] = 0x24; // VK_HOME
-		imgui_io.KeyMap[ImGuiKey_End] = 0x23; // VK_END
-		imgui_io.KeyMap[ImGuiKey_Delete] = 0x2E; // VK_DELETE
-		imgui_io.KeyMap[ImGuiKey_Backspace] = 0x08; // VK_BACK
-		imgui_io.KeyMap[ImGuiKey_Enter] = 0x0D; // VK_RETURN
-		imgui_io.KeyMap[ImGuiKey_Escape] = 0x1B; // VK_ESCAPE
-		imgui_io.KeyMap[ImGuiKey_A] = 'A';
-		imgui_io.KeyMap[ImGuiKey_C] = 'C';
-		imgui_io.KeyMap[ImGuiKey_V] = 'V';
-		imgui_io.KeyMap[ImGuiKey_X] = 'X';
-		imgui_io.KeyMap[ImGuiKey_Y] = 'Y';
-		imgui_io.KeyMap[ImGuiKey_Z] = 'Z';
-		imgui_style.WindowRounding = 0.0f;
-		imgui_style.ChildWindowRounding = 0.0f;
-		imgui_style.FrameRounding = 0.0f;
-		imgui_style.ScrollbarRounding = 0.0f;
-		imgui_style.GrabRounding = 0.0f;
+    SK_ImGui_InstallDrawCallback (SK_ImGui_DrawCallback, this);
 
-		_imgui_font_atlas->AddFontDefault();
-		const auto font_path = filesystem::get_special_folder_path(filesystem::special_folder::windows) / "Fonts" / "consolab.ttf";
-		if (filesystem::exists(font_path))
-			_imgui_font_atlas->AddFontFromFileTTF(font_path.string().c_str(), 18.0f);
-		else
-			_imgui_font_atlas->AddFontDefault();
+		//auto &imgui_style = _imgui_context->Style;
+		//imgui_io.Fonts = _imgui_font_atlas.get();
+		//imgui_io.IniFilename = nullptr;
+		//imgui_io.KeyMap[ImGuiKey_Tab] = 0x09; // VK_TAB
+		//imgui_io.KeyMap[ImGuiKey_LeftArrow] = 0x25; // VK_LEFT
+		//imgui_io.KeyMap[ImGuiKey_RightArrow] = 0x27; // VK_RIGHT
+		//imgui_io.KeyMap[ImGuiKey_UpArrow] = 0x26; // VK_UP
+		//imgui_io.KeyMap[ImGuiKey_DownArrow] = 0x28; // VK_DOWN
+		//imgui_io.KeyMap[ImGuiKey_PageUp] = 0x21; // VK_PRIOR
+		//imgui_io.KeyMap[ImGuiKey_PageDown] = 0x22; // VK_NEXT
+		//imgui_io.KeyMap[ImGuiKey_Home] = 0x24; // VK_HOME
+		//imgui_io.KeyMap[ImGuiKey_End] = 0x23; // VK_END
+		//imgui_io.KeyMap[ImGuiKey_Delete] = 0x2E; // VK_DELETE
+		//imgui_io.KeyMap[ImGuiKey_Backspace] = 0x08; // VK_BACK
+		//imgui_io.KeyMap[ImGuiKey_Enter] = 0x0D; // VK_RETURN
+		//imgui_io.KeyMap[ImGuiKey_Escape] = 0x1B; // VK_ESCAPE
+		//imgui_io.KeyMap[ImGuiKey_A] = 'A';
+		//imgui_io.KeyMap[ImGuiKey_C] = 'C';
+		//imgui_io.KeyMap[ImGuiKey_V] = 'V';
+		//imgui_io.KeyMap[ImGuiKey_X] = 'X';
+		//imgui_io.KeyMap[ImGuiKey_Y] = 'Y';
+		//imgui_io.KeyMap[ImGuiKey_Z] = 'Z';
+		//imgui_style.WindowRounding = 0.0f;
+		//imgui_style.ChildWindowRounding = 0.0f;
+		//imgui_style.FrameRounding = 0.0f;
+		//imgui_style.ScrollbarRounding = 0.0f;
+		//imgui_style.GrabRounding = 0.0f;
+
+		//_imgui_font_atlas->AddFontDefault();
+		//const auto font_path = filesystem::get_special_folder_path(filesystem::special_folder::windows) / "Fonts" / "consolab.ttf";
+		//if (filesystem::exists(font_path))
+			//_imgui_font_atlas->AddFontFromFileTTF(font_path.string().c_str(), 18.0f);
+		//else
+			//_imgui_font_atlas->AddFontDefault();
 
 		load_configuration();
 	}
 	runtime::~runtime()
 	{
-		ImGui::SetCurrentContext(_imgui_context);
-
 		ImGui::Shutdown();
-		ImGui::DestroyContext(_imgui_context);
 
 		assert(!_is_initialized && _techniques.empty());
 	}
@@ -112,7 +125,7 @@ namespace reshade
 			return;
 		}
 
-		_imgui_font_atlas_texture.reset();
+		//_imgui_font_atlas_texture.reset();
 
 		LOG(INFO) << "Destroyed runtime environment on runtime " << this << ".";
 
@@ -149,8 +162,10 @@ namespace reshade
 		_last_present_time += _last_frame_duration;
 
 		// Create and save screenshot if associated shortcut is down
-		if (!_screenshot_key_setting_active &&
-			_input->is_key_pressed(_screenshot_key.keycode, _screenshot_key.ctrl, _screenshot_key.shift, false))
+		if (! _screenshot_key_setting_active &&
+			    ImGui::GetIO ().KeysDownDuration [_screenshot_key.keycode] == 0.0f                 &&
+          ImGui::GetIO ().KeyCtrl                                    == _screenshot_key.ctrl &&
+          ImGui::GetIO ().KeyAlt                                     == _screenshot_key.shift )
 		{
 			save_screenshot();
 		}
@@ -159,7 +174,7 @@ namespace reshade
 		draw_overlay();
 
 		// Reset input status
-		_input->next_frame();
+////////		_input->next_frame();
 
 		// Update and compile next effect queued for reloading
 		if (_reload_remaining_effects != 0 && _framecount > 1)
@@ -187,7 +202,12 @@ namespace reshade
 	}
 	void runtime::on_present_effect()
 	{
-		if (_input->is_key_pressed(_effects_key.keycode, _effects_key.ctrl, _effects_key.shift, false))
+    ImGuiIO& io =
+      ImGui::GetIO ();
+
+		if ( io.KeysDownDuration [_effects_key.keycode] == 0.0f              &&
+         io.KeyCtrl                                 == _effects_key.ctrl &&
+         io.KeyShift                                == _effects_key.shift )
 		{
 			_effects_enabled = !_effects_enabled;
 		}
@@ -316,7 +336,7 @@ namespace reshade
 						bool current = false;
 						get_uniform_value(variable, &current, 1);
 
-						if (_input->is_key_pressed(key))
+						if (ImGui::GetIO ().KeysDownDuration [key] == 0.0f)
 						{
 							current = !current;
 
@@ -325,7 +345,7 @@ namespace reshade
 					}
 					else
 					{
-						const bool state = _input->is_key_down(key);
+						const bool state = ImGui::GetIO ().KeysDownDuration [key] == 0.0f;
 
 						set_uniform_value(variable, &state, 1);
 					}
@@ -333,7 +353,8 @@ namespace reshade
 			}
 			else if (source == "mousepoint")
 			{
-				const float values[2] = { static_cast<float>(_input->mouse_position_x()), static_cast<float>(_input->mouse_position_y()) };
+				const float values[2] = { static_cast<float>(ImGui::GetIO ().MousePos.x),
+                                  static_cast<float>(ImGui::GetIO ().MousePos.y) };
 
 				set_uniform_value(variable, values, 2);
 			}
@@ -348,7 +369,7 @@ namespace reshade
 						bool current = false;
 						get_uniform_value(variable, &current, 1);
 
-						if (_input->is_mouse_button_pressed(index))
+						if (ImGui::GetIO ().MouseDownDuration [index] == 0.0f)
 						{
 							current = !current;
 
@@ -357,7 +378,7 @@ namespace reshade
 					}
 					else
 					{
-						const bool state = _input->is_mouse_button_down(index);
+						const bool state = ImGui::GetIO ().MouseDown [index];//_input->is_mouse_button_down(index);
 
 						set_uniform_value(variable, &state, 1);
 					}
@@ -386,13 +407,13 @@ namespace reshade
 					technique.average_duration.clear();
 				}
 			}
-			else if (!_toggle_key_setting_active &&
-				_input->is_key_pressed(technique.toggle_key, technique.toggle_key_ctrl, technique.toggle_key_shift, technique.toggle_key_alt) ||
-				(technique.toggle_key >= 0x01 && technique.toggle_key <= 0x06 && _input->is_mouse_button_pressed(technique.toggle_key - 1)))
-			{
-				technique.enabled = !technique.enabled;
-				technique.timeleft = technique.enabled ? technique.timeout : 0;
-			}
+////			else if (!_toggle_key_setting_active &&
+////				_input->is_key_pressed(technique.toggle_key, technique.toggle_key_ctrl, technique.toggle_key_shift, technique.toggle_key_alt) ||
+////				(technique.toggle_key >= 0x01 && technique.toggle_key <= 0x06 && _input->is_mouse_button_pressed(technique.toggle_key - 1)))
+////			{
+////				technique.enabled = !technique.enabled;
+////				technique.timeleft = technique.enabled ? technique.timeout : 0;
+////			}
 
 			if (!technique.enabled)
 			{
@@ -684,61 +705,61 @@ namespace reshade
 		_show_clock = config.get("GENERAL", "ShowClock", _show_clock).as<bool>();
 		_show_framerate = config.get("GENERAL", "ShowFPS", _show_framerate).as<bool>();
 
-		auto &style = _imgui_context->Style;
-		style.Alpha = config.get("STYLE", "Alpha", 0.95f).as<float>();
-
-		for (size_t i = 0; i < 3; i++)
-			_imgui_col_background[i] = config.get("STYLE", "ColBackground", _imgui_col_background).as<float>(i);
-		for (size_t i = 0; i < 3; i++)
-			_imgui_col_item_background[i] = config.get("STYLE", "ColItemBackground", _imgui_col_item_background).as<float>(i);
-		for (size_t i = 0; i < 3; i++)
-			_imgui_col_active[i] = config.get("STYLE", "ColActive", _imgui_col_active).as<float>(i);
-		for (size_t i = 0; i < 3; i++)
-			_imgui_col_text[i] = config.get("STYLE", "ColText", _imgui_col_text).as<float>(i);
-		for (size_t i = 0; i < 3; i++)
-			_imgui_col_text_fps[i] = config.get("STYLE", "ColFPSText", _imgui_col_text_fps).as<float>(i);
-
-		style.Colors[ImGuiCol_Text] = ImVec4(_imgui_col_text[0], _imgui_col_text[1], _imgui_col_text[2], 1.00f);
-		style.Colors[ImGuiCol_TextDisabled] = ImVec4(_imgui_col_text[0], _imgui_col_text[1], _imgui_col_text[2], 0.58f);
-		style.Colors[ImGuiCol_WindowBg] = ImVec4(_imgui_col_background[0], _imgui_col_background[1], _imgui_col_background[2], 1.00f);
-		style.Colors[ImGuiCol_ChildWindowBg] = ImVec4(_imgui_col_item_background[0], _imgui_col_item_background[1], _imgui_col_item_background[2], 0.00f);
-		style.Colors[ImGuiCol_Border] = ImVec4(_imgui_col_text[0], _imgui_col_text[1], _imgui_col_text[2], 0.30f);
-		style.Colors[ImGuiCol_FrameBg] = ImVec4(_imgui_col_item_background[0], _imgui_col_item_background[1], _imgui_col_item_background[2], 1.00f);
-		style.Colors[ImGuiCol_FrameBgHovered] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 0.68f);
-		style.Colors[ImGuiCol_FrameBgActive] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 1.00f);
-		style.Colors[ImGuiCol_TitleBg] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 0.45f);
-		style.Colors[ImGuiCol_TitleBgCollapsed] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 0.35f);
-		style.Colors[ImGuiCol_TitleBgActive] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 0.78f);
-		style.Colors[ImGuiCol_MenuBarBg] = ImVec4(_imgui_col_item_background[0], _imgui_col_item_background[1], _imgui_col_item_background[2], 0.57f);
-		style.Colors[ImGuiCol_ScrollbarBg] = ImVec4(_imgui_col_item_background[0], _imgui_col_item_background[1], _imgui_col_item_background[2], 1.00f);
-		style.Colors[ImGuiCol_ScrollbarGrab] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 0.31f);
-		style.Colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 0.78f);
-		style.Colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 1.00f);
-		style.Colors[ImGuiCol_ComboBg] = ImVec4(_imgui_col_item_background[0], _imgui_col_item_background[1], _imgui_col_item_background[2], 1.00f);
-		style.Colors[ImGuiCol_CheckMark] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 0.80f);
-		style.Colors[ImGuiCol_SliderGrab] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 0.24f);
-		style.Colors[ImGuiCol_SliderGrabActive] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 1.00f);
-		style.Colors[ImGuiCol_Button] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 0.44f);
-		style.Colors[ImGuiCol_ButtonHovered] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 0.86f);
-		style.Colors[ImGuiCol_ButtonActive] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 1.00f);
-		style.Colors[ImGuiCol_Header] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 0.76f);
-		style.Colors[ImGuiCol_HeaderHovered] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 0.86f);
-		style.Colors[ImGuiCol_HeaderActive] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 1.00f);
-		style.Colors[ImGuiCol_Column] = ImVec4(_imgui_col_text[0], _imgui_col_text[1], _imgui_col_text[2], 0.32f);
-		style.Colors[ImGuiCol_ColumnHovered] = ImVec4(_imgui_col_text[0], _imgui_col_text[1], _imgui_col_text[2], 0.78f);
-		style.Colors[ImGuiCol_ColumnActive] = ImVec4(_imgui_col_text[0], _imgui_col_text[1], _imgui_col_text[2], 1.00f);
-		style.Colors[ImGuiCol_ResizeGrip] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 0.20f);
-		style.Colors[ImGuiCol_ResizeGripHovered] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 0.78f);
-		style.Colors[ImGuiCol_ResizeGripActive] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 1.00f);
-		style.Colors[ImGuiCol_CloseButton] = ImVec4(_imgui_col_text[0], _imgui_col_text[1], _imgui_col_text[2], 0.16f);
-		style.Colors[ImGuiCol_CloseButtonHovered] = ImVec4(_imgui_col_text[0], _imgui_col_text[1], _imgui_col_text[2], 0.39f);
-		style.Colors[ImGuiCol_CloseButtonActive] = ImVec4(_imgui_col_text[0], _imgui_col_text[1], _imgui_col_text[2], 1.00f);
-		style.Colors[ImGuiCol_PlotLines] = ImVec4(_imgui_col_text[0], _imgui_col_text[1], _imgui_col_text[2], 0.63f);
-		style.Colors[ImGuiCol_PlotLinesHovered] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 1.00f);
-		style.Colors[ImGuiCol_PlotHistogram] = ImVec4(_imgui_col_text[0], _imgui_col_text[1], _imgui_col_text[2], 0.63f);
-		style.Colors[ImGuiCol_PlotHistogramHovered] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 1.00f);
-		style.Colors[ImGuiCol_TextSelectedBg] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 0.43f);
-		style.Colors[ImGuiCol_PopupBg] = ImVec4(_imgui_col_item_background[0], _imgui_col_item_background[1], _imgui_col_item_background[2], 0.92f);
+		//auto &style = _imgui_context->Style;
+		//style.Alpha = config.get("STYLE", "Alpha", 0.95f).as<float>();
+    //
+		//for (size_t i = 0; i < 3; i++)
+		//	_imgui_col_background[i] = config.get("STYLE", "ColBackground", _imgui_col_background).as<float>(i);
+		//for (size_t i = 0; i < 3; i++)
+		//	_imgui_col_item_background[i] = config.get("STYLE", "ColItemBackground", _imgui_col_item_background).as<float>(i);
+		//for (size_t i = 0; i < 3; i++)
+		//	_imgui_col_active[i] = config.get("STYLE", "ColActive", _imgui_col_active).as<float>(i);
+		//for (size_t i = 0; i < 3; i++)
+		//	_imgui_col_text[i] = config.get("STYLE", "ColText", _imgui_col_text).as<float>(i);
+		//for (size_t i = 0; i < 3; i++)
+		//	_imgui_col_text_fps[i] = config.get("STYLE", "ColFPSText", _imgui_col_text_fps).as<float>(i);
+    //
+		//style.Colors[ImGuiCol_Text] = ImVec4(_imgui_col_text[0], _imgui_col_text[1], _imgui_col_text[2], 1.00f);
+		//style.Colors[ImGuiCol_TextDisabled] = ImVec4(_imgui_col_text[0], _imgui_col_text[1], _imgui_col_text[2], 0.58f);
+		//style.Colors[ImGuiCol_WindowBg] = ImVec4(_imgui_col_background[0], _imgui_col_background[1], _imgui_col_background[2], 1.00f);
+		//style.Colors[ImGuiCol_ChildWindowBg] = ImVec4(_imgui_col_item_background[0], _imgui_col_item_background[1], _imgui_col_item_background[2], 0.00f);
+		//style.Colors[ImGuiCol_Border] = ImVec4(_imgui_col_text[0], _imgui_col_text[1], _imgui_col_text[2], 0.30f);
+		//style.Colors[ImGuiCol_FrameBg] = ImVec4(_imgui_col_item_background[0], _imgui_col_item_background[1], _imgui_col_item_background[2], 1.00f);
+		//style.Colors[ImGuiCol_FrameBgHovered] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 0.68f);
+		//style.Colors[ImGuiCol_FrameBgActive] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 1.00f);
+		//style.Colors[ImGuiCol_TitleBg] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 0.45f);
+		//style.Colors[ImGuiCol_TitleBgCollapsed] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 0.35f);
+		//style.Colors[ImGuiCol_TitleBgActive] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 0.78f);
+		//style.Colors[ImGuiCol_MenuBarBg] = ImVec4(_imgui_col_item_background[0], _imgui_col_item_background[1], _imgui_col_item_background[2], 0.57f);
+		//style.Colors[ImGuiCol_ScrollbarBg] = ImVec4(_imgui_col_item_background[0], _imgui_col_item_background[1], _imgui_col_item_background[2], 1.00f);
+		//style.Colors[ImGuiCol_ScrollbarGrab] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 0.31f);
+		//style.Colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 0.78f);
+		//style.Colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 1.00f);
+		//style.Colors[ImGuiCol_ComboBg] = ImVec4(_imgui_col_item_background[0], _imgui_col_item_background[1], _imgui_col_item_background[2], 1.00f);
+		//style.Colors[ImGuiCol_CheckMark] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 0.80f);
+		//style.Colors[ImGuiCol_SliderGrab] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 0.24f);
+		//style.Colors[ImGuiCol_SliderGrabActive] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 1.00f);
+		//style.Colors[ImGuiCol_Button] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 0.44f);
+		//style.Colors[ImGuiCol_ButtonHovered] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 0.86f);
+		//style.Colors[ImGuiCol_ButtonActive] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 1.00f);
+		//style.Colors[ImGuiCol_Header] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 0.76f);
+		//style.Colors[ImGuiCol_HeaderHovered] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 0.86f);
+		//style.Colors[ImGuiCol_HeaderActive] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 1.00f);
+		//style.Colors[ImGuiCol_Column] = ImVec4(_imgui_col_text[0], _imgui_col_text[1], _imgui_col_text[2], 0.32f);
+		//style.Colors[ImGuiCol_ColumnHovered] = ImVec4(_imgui_col_text[0], _imgui_col_text[1], _imgui_col_text[2], 0.78f);
+		//style.Colors[ImGuiCol_ColumnActive] = ImVec4(_imgui_col_text[0], _imgui_col_text[1], _imgui_col_text[2], 1.00f);
+		//style.Colors[ImGuiCol_ResizeGrip] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 0.20f);
+		//style.Colors[ImGuiCol_ResizeGripHovered] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 0.78f);
+		//style.Colors[ImGuiCol_ResizeGripActive] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 1.00f);
+		//style.Colors[ImGuiCol_CloseButton] = ImVec4(_imgui_col_text[0], _imgui_col_text[1], _imgui_col_text[2], 0.16f);
+		//style.Colors[ImGuiCol_CloseButtonHovered] = ImVec4(_imgui_col_text[0], _imgui_col_text[1], _imgui_col_text[2], 0.39f);
+		//style.Colors[ImGuiCol_CloseButtonActive] = ImVec4(_imgui_col_text[0], _imgui_col_text[1], _imgui_col_text[2], 1.00f);
+		//style.Colors[ImGuiCol_PlotLines] = ImVec4(_imgui_col_text[0], _imgui_col_text[1], _imgui_col_text[2], 0.63f);
+		//style.Colors[ImGuiCol_PlotLinesHovered] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 1.00f);
+		//style.Colors[ImGuiCol_PlotHistogram] = ImVec4(_imgui_col_text[0], _imgui_col_text[1], _imgui_col_text[2], 0.63f);
+		//style.Colors[ImGuiCol_PlotHistogramHovered] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 1.00f);
+		//style.Colors[ImGuiCol_TextSelectedBg] = ImVec4(_imgui_col_active[0], _imgui_col_active[1], _imgui_col_active[2], 0.43f);
+		//style.Colors[ImGuiCol_PopupBg] = ImVec4(_imgui_col_item_background[0], _imgui_col_item_background[1], _imgui_col_item_background[2], 0.92f);
 
 		if (_current_preset >= _preset_files.size())
 		{
@@ -795,7 +816,7 @@ namespace reshade
 		config.set("GENERAL", "ShowClock", _show_clock);
 		config.set("GENERAL", "ShowFPS", _show_framerate);
 
-		const auto &style = _imgui_context->Style;
+    const auto &style = _imgui_context->Style;
 		config.set("STYLE", "Alpha", style.Alpha);
 		config.set("STYLE", "ColBackground", _imgui_col_background);
 		config.set("STYLE", "ColItemBackground", _imgui_col_item_background);
@@ -951,194 +972,21 @@ namespace reshade
 
 	void runtime::draw_overlay()
 	{
-		const bool show_splash = std::chrono::duration_cast<std::chrono::seconds>(_last_present_time - _last_reload_time).count() < 5;
+    ImGuiIO& io =
+      ImGui::GetIO ();
 
-		if (!_overlay_key_setting_active &&
-			_input->is_key_pressed(_menu_key.keycode, _menu_key.ctrl, _menu_key.shift, false))
+		if (! _overlay_key_setting_active &&
+			    io.KeysDownDuration [_menu_key.keycode] == 0.0f           &&
+          io.KeyCtrl                              == _menu_key.ctrl &&
+          io.KeyShift                             == _menu_key.shift )
 		{
 			_show_menu = !_show_menu;
 		}
 
-		if (!(_show_menu || _show_clock || _show_framerate || _show_error_log || show_splash))
-		{
-			_input->block_mouse_input(false);
-			_input->block_keyboard_input(false);
-			return;
-		}
-
 		// Update ImGui configuration
-		ImGui::SetCurrentContext(_imgui_context);
+		_imgui_context = ImGui::GetCurrentContext ();
 
-		auto &imgui_io = ImGui::GetIO();
-		imgui_io.DeltaTime = _last_frame_duration.count() * 1e-9f;
-		imgui_io.DisplaySize.x = static_cast<float>(_width);
-		imgui_io.DisplaySize.y = static_cast<float>(_height);
-		imgui_io.Fonts->TexID = _imgui_font_atlas_texture.get();
-		imgui_io.MouseDrawCursor = _show_menu;
-
-		imgui_io.KeyCtrl = _input->is_key_down(0x11); // VK_CONTROL
-		imgui_io.KeyShift = _input->is_key_down(0x10); // VK_SHIFT
-		imgui_io.KeyAlt = _input->is_key_down(0x12); // VK_MENU
-		imgui_io.MousePos.x = static_cast<float>(_input->mouse_position_x());
-		imgui_io.MousePos.y = static_cast<float>(_input->mouse_position_y());
-		imgui_io.MouseWheel += _input->mouse_wheel_delta();
-
-		for (unsigned int i = 0; i < 256; i++)
-		{
-			imgui_io.KeysDown[i] = _input->is_key_down(i);
-
-			if (_input->is_key_pressed(i))
-			{
-				imgui_io.AddInputCharacter(_input->key_to_text(i));
-			}
-		}
-		for (unsigned int i = 0; i < 5; i++)
-		{
-			imgui_io.MouseDown[i] = _input->is_mouse_button_down(i);
-		}
-
-		if (imgui_io.KeyCtrl)
-		{
-			// Change global font scale if user presses the control key and moves the mouse wheel
-			imgui_io.FontGlobalScale = ImClamp(imgui_io.FontGlobalScale + imgui_io.MouseWheel * 0.10f, 1.0f, 2.50f);
-		}
-
-		// Create ImGui widgets and windows
-		ImGui::NewFrame();
-		_effects_expanded_state &= 2;
-
-		if (show_splash)
-		{
-			ImGui::SetNextWindowPos(ImVec2(10, 10));
-			ImGui::SetNextWindowSize(ImVec2(_width - 20.0f, ImGui::GetItemsLineHeightWithSpacing() * 3), ImGuiSetCond_Appearing);
-			ImGui::Begin("Splash Screen", nullptr, ImVec2(), -1,
-				ImGuiWindowFlags_NoTitleBar |
-				ImGuiWindowFlags_NoScrollbar |
-				ImGuiWindowFlags_NoMove |
-				ImGuiWindowFlags_NoResize |
-				ImGuiWindowFlags_NoSavedSettings |
-				ImGuiWindowFlags_NoInputs |
-				ImGuiWindowFlags_NoFocusOnAppearing);
-
-			ImGui::TextUnformatted("ReShade " VERSION_STRING_FILE " by crosire");
-			ImGui::TextUnformatted("Visit http://reshade.me for news, updates, shaders and discussion.");
-
-			ImGui::Spacing();
-
-			if (_reload_remaining_effects != 0)
-			{
-				ImGui::Text(
-					"Loading (%u effects remaining) ... "
-					"This might take a while. The application could become unresponsive for some time.",
-					static_cast<unsigned int>(_reload_remaining_effects));
-			}
-			else
-			{
-				ImGui::Text(
-					"Press '%s%s%s' to open the configuration menu.",
-					_menu_key.ctrl ? "Ctrl + " : "",
-					_menu_key.shift ? "Shift + " : "",
-					keyboard_keys[_menu_key.keycode]);
-
-				if (_errors.find("error") != std::string::npos)
-				{
-					ImGui::SetWindowSize(ImVec2(_width - 20.0f, ImGui::GetItemsLineHeightWithSpacing() * 4));
-
-					ImGui::Spacing();
-					ImGui::TextColored(ImVec4(1, 0, 0, 1),
-						"There were errors compiling some shaders. "
-						"Open the configuration menu and click on 'Show Log' for more details.");
-				}
-			}
-
-			ImGui::End();
-		}
-
-		if (_reload_remaining_effects == 0)
-		{
-			if (!show_splash)
-			{
-				ImGui::SetNextWindowPos(ImVec2(_width - 80.f, 0));
-				ImGui::SetNextWindowSize(ImVec2(80, 100));
-				ImGui::PushFont(imgui_io.Fonts->Fonts[1]);
-				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(_imgui_col_text_fps[0], _imgui_col_text_fps[1], _imgui_col_text_fps[2], 1.0f));
-				ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4());
-				ImGui::Begin("FPS", nullptr,
-					ImGuiWindowFlags_NoTitleBar |
-					ImGuiWindowFlags_NoScrollbar |
-					ImGuiWindowFlags_NoMove |
-					ImGuiWindowFlags_NoResize |
-					ImGuiWindowFlags_NoSavedSettings |
-					ImGuiWindowFlags_NoInputs |
-					ImGuiWindowFlags_NoFocusOnAppearing);
-
-				if (_show_clock)
-				{
-					const int hour = _date[3] / 3600;
-					const int minute = (_date[3] - hour * 3600) / 60;
-					ImGui::Text(" %02u%s%02u", hour, _date[3] % 2 ? ":" : " ", minute);
-				}
-				if (_show_framerate)
-				{
-					ImGui::Text("%.0f fps", imgui_io.Framerate);
-					ImGui::Text("%*lld ms", 3, std::chrono::duration_cast<std::chrono::milliseconds>(_last_frame_duration).count());
-				}
-
-				ImGui::End();
-				ImGui::PopStyleColor(2);
-				ImGui::PopFont();
-			}
-
-			if (_show_menu)
-			{
-				ImGui::SetNextWindowPosCenter(ImGuiSetCond_Once);
-				ImGui::SetNextWindowSize(ImVec2(710, 650), ImGuiSetCond_Once);
-				ImGui::Begin("ReShade " VERSION_STRING_FILE " by crosire###Main", &_show_menu,
-					ImGuiWindowFlags_MenuBar |
-					ImGuiWindowFlags_NoCollapse);
-
-				draw_overlay_menu();
-
-				ImGui::End();
-			}
-
-			if (_show_error_log)
-			{
-				ImGui::SetNextWindowSize(ImVec2(500, 100), ImGuiSetCond_Once);
-				ImGui::Begin("Error Log", &_show_error_log);
-				ImGui::PushTextWrapPos();
-
-				for (const auto &line : split(_errors, '\n'))
-				{
-					ImVec4 textcol(1, 1, 1, 1);
-
-					if (line.find("error") != std::string::npos)
-					{
-						textcol = ImVec4(1, 0, 0, 1);
-					}
-					else if (line.find("warning") != std::string::npos)
-					{
-						textcol = ImVec4(1, 1, 0, 1);
-					}
-
-					ImGui::TextColored(textcol, line.c_str());
-				}
-
-				ImGui::PopTextWrapPos();
-				ImGui::End();
-			}
-		}
-
-		// Render ImGui widgets and windows
-		ImGui::Render();
-
-		if (_input_processing_mode != 0)
-		{
-			_input->block_mouse_input(imgui_io.WantCaptureMouse || (_input_processing_mode == 2 && _show_menu));
-			_input->block_keyboard_input(imgui_io.WantCaptureKeyboard || (_input_processing_mode == 2 && _show_menu));
-		}
-
-		render_imgui_draw_data(ImGui::GetDrawData());
+    return;
 	}
 	void runtime::draw_overlay_menu()
 	{
@@ -1945,25 +1793,26 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 			{
 				_toggle_key_setting_active = true;
 
-				const unsigned int last_key_pressed = _input->last_key_pressed();
+				const unsigned int last_key_pressed =
+					_input->last_key_pressed();
 
 				if (last_key_pressed != 0)
 				{
 					if (last_key_pressed == 0x08) // Backspace
 					{
-						technique.toggle_key = 0;
-						technique.toggle_key_ctrl = false;
+						technique.toggle_key       = 0;
+						technique.toggle_key_ctrl  = false;
 						technique.toggle_key_shift = false;
-						technique.toggle_key_alt = false;
+						technique.toggle_key_alt   = false;
 					}
 					else if (last_key_pressed < 0x10 || last_key_pressed > 0x12)
 					{
-						technique.toggle_key = last_key_pressed;
-						technique.toggle_key_ctrl = _input->is_key_down(0x11);
-						technique.toggle_key_shift = _input->is_key_down(0x10);
-						technique.toggle_key_alt = _input->is_key_down(0x12);
+						technique.toggle_key       = last_key_pressed;
+						technique.toggle_key_ctrl  = _input->is_key_down (0x11);
+						technique.toggle_key_shift = _input->is_key_down (0x10);
+						technique.toggle_key_alt   = _input->is_key_down (0x12);
 					}
-
+        
 					if (_current_preset >= 0)
 					{
 						save_preset(_preset_files[_current_preset]);
@@ -1989,7 +1838,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 			if (hovered_technique_index >= 0 && hovered_technique_index != _selected_technique)
 			{
-				std::swap(_techniques[hovered_technique_index], _techniques[_selected_technique]);
+				//std::swap(_techniques[hovered_technique_index], _techniques[_selected_technique]);
 				_selected_technique = hovered_technique_index;
 
 				if (_current_preset >= 0)
@@ -2053,4 +1902,160 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 			}
 		}
 	}
+
+  void
+  runtime::draw_callback (void)
+  {
+		const bool show_splash = std::chrono::duration_cast<std::chrono::seconds>(_last_present_time - _last_reload_time).count() < 5;
+
+		auto &imgui_io = ImGui::GetIO();
+		//imgui_io.DeltaTime = _last_frame_duration.count() * 1e-9f;
+		//imgui_io.DisplaySize.x = static_cast<float>(_width);
+		//imgui_io.DisplaySize.y = static_cast<float>(_height);
+		//imgui_io.Fonts->TexID = _imgui_font_atlas_texture.get();
+		//imgui_io.MouseDrawCursor = _show_menu;
+
+		if (imgui_io.KeyCtrl)
+		{
+			// Change global font scale if user presses the control key and moves the mouse wheel
+			imgui_io.FontGlobalScale = ImClamp(imgui_io.FontGlobalScale + imgui_io.MouseWheel * 0.10f, 1.0f, 2.50f);
+		}
+
+		////// Create ImGui widgets and windows
+		//////ImGui::NewFrame();
+
+		_effects_expanded_state &= 2;
+
+		if (show_splash)
+		{
+			ImGui::SetNextWindowPos(ImVec2(10, 10));
+			ImGui::SetNextWindowSize(ImVec2(_width - 20.0f, ImGui::GetItemsLineHeightWithSpacing() * 3), ImGuiSetCond_Appearing);
+			ImGui::Begin("Splash Screen", nullptr, ImVec2(), -1,
+				ImGuiWindowFlags_NoTitleBar |
+				ImGuiWindowFlags_NoScrollbar |
+				ImGuiWindowFlags_NoMove |
+				ImGuiWindowFlags_NoResize |
+				ImGuiWindowFlags_NoSavedSettings |
+				ImGuiWindowFlags_NoInputs |
+				ImGuiWindowFlags_NoFocusOnAppearing);
+
+			ImGui::TextUnformatted("ReShade " VERSION_STRING_FILE " by crosire");
+			ImGui::TextUnformatted("Visit http://reshade.me for news, updates, shaders and discussion.");
+
+			ImGui::Spacing();
+
+			if (_reload_remaining_effects != 0)
+			{
+				ImGui::Text(
+					"Loading (%u effects remaining) ... "
+					"This might take a while. The application could become unresponsive for some time.",
+					static_cast<unsigned int>(_reload_remaining_effects));
+			}
+			else
+			{
+				ImGui::Text(
+					"Press '%s%s%s' to open the configuration menu.",
+					_menu_key.ctrl ? "Ctrl + " : "",
+					_menu_key.shift ? "Shift + " : "",
+					keyboard_keys[_menu_key.keycode]);
+
+				if (_errors.find("error") != std::string::npos)
+				{
+					ImGui::SetWindowSize(ImVec2(_width - 20.0f, ImGui::GetItemsLineHeightWithSpacing() * 4));
+
+					ImGui::Spacing();
+					ImGui::TextColored(ImVec4(1, 0, 0, 1),
+						"There were errors compiling some shaders. "
+						"Open the configuration menu and click on 'Show Log' for more details.");
+				}
+			}
+
+			ImGui::End();
+		}
+
+		if (_reload_remaining_effects == 0)
+		{
+			if (!show_splash)
+			{
+				ImGui::SetNextWindowPos(ImVec2(_width - 80.f, 0));
+				ImGui::SetNextWindowSize(ImVec2(80, 100));
+				ImGui::PushFont(imgui_io.Fonts->Fonts[1]);
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(_imgui_col_text_fps[0], _imgui_col_text_fps[1], _imgui_col_text_fps[2], 1.0f));
+				ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4());
+				ImGui::Begin("FPS", nullptr,
+					ImGuiWindowFlags_NoTitleBar |
+					ImGuiWindowFlags_NoScrollbar |
+					ImGuiWindowFlags_NoMove |
+					ImGuiWindowFlags_NoResize |
+					ImGuiWindowFlags_NoSavedSettings |
+					ImGuiWindowFlags_NoInputs |
+					ImGuiWindowFlags_NoFocusOnAppearing);
+
+				if (_show_clock)
+				{
+					const int hour = _date[3] / 3600;
+					const int minute = (_date[3] - hour * 3600) / 60;
+					ImGui::Text(" %02u%s%02u", hour, _date[3] % 2 ? ":" : " ", minute);
+				}
+				if (_show_framerate)
+				{
+					ImGui::Text("%.0f fps", imgui_io.Framerate);
+					ImGui::Text("%*lld ms", 3, std::chrono::duration_cast<std::chrono::milliseconds>(_last_frame_duration).count());
+				}
+
+				ImGui::End();
+				ImGui::PopStyleColor(2);
+				ImGui::PopFont();
+			}
+
+			if (_show_menu)
+			{
+				ImGui::SetNextWindowPosCenter(ImGuiSetCond_Once);
+				ImGui::SetNextWindowSize(ImVec2(710, 650), ImGuiSetCond_Once);
+				ImGui::Begin("ReShade " VERSION_STRING_FILE " by crosire###Main", &_show_menu,
+					ImGuiWindowFlags_MenuBar |
+					ImGuiWindowFlags_NoCollapse);
+
+				draw_overlay_menu();
+
+				ImGui::End();
+			}
+
+			if (_show_error_log)
+			{
+				ImGui::SetNextWindowSize(ImVec2(500, 100), ImGuiSetCond_Once);
+				ImGui::Begin("Error Log", &_show_error_log);
+				ImGui::PushTextWrapPos();
+
+				for (const auto &line : split(_errors, '\n'))
+				{
+					ImVec4 textcol(1, 1, 1, 1);
+
+					if (line.find("error") != std::string::npos)
+					{
+						textcol = ImVec4(1, 0, 0, 1);
+					}
+					else if (line.find("warning") != std::string::npos)
+					{
+						textcol = ImVec4(1, 1, 0, 1);
+					}
+
+					ImGui::TextColored(textcol, line.c_str());
+				}
+
+				ImGui::PopTextWrapPos();
+				ImGui::End();
+			}
+		}
+
+/////		render_imgui_draw_data(ImGui::GetDrawData());
+  }
+}
+
+
+void
+__stdcall
+SK_ImGui_DrawCallback (void* user)
+{
+  reinterpret_cast <reshade::runtime *> (user)->draw_callback ();
 }

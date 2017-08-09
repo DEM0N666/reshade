@@ -12,12 +12,12 @@ EXPORTS
 	D3DPERF_GetStatus
 
 	; d3d10.dll
-	D3D10CreateDevice
-	D3D10CreateDeviceAndSwapChain
+	;D3D10CreateDevice
+	;D3D10CreateDeviceAndSwapChain
 
 	; d3d10_1.dll
-	D3D10CreateDevice1
-	D3D10CreateDeviceAndSwapChain1
+	;D3D10CreateDevice1
+	;D3D10CreateDeviceAndSwapChain1
 
 	; d3d11.dll
 	D3D11CreateDevice
@@ -30,10 +30,10 @@ EXPORTS
 
 	DXGIDumpJournal
 	DXGIReportAdapterConfiguration
-	DXGID3D10CreateDevice
-	DXGID3D10CreateLayeredDevice
-	DXGID3D10GetLayeredDeviceSize
-	DXGID3D10RegisterLayers
+	;DXGID3D10CreateDevice
+	;DXGID3D10CreateLayeredDevice
+	;DXGID3D10GetLayeredDeviceSize
+	;DXGID3D10RegisterLayers
 
 	; opengl32.dll
 	glAccum
@@ -403,13 +403,6 @@ EXPORTS
 	RegisterClassW = HookRegisterClassW
 	RegisterClassExA = HookRegisterClassExA
 	RegisterClassExW = HookRegisterClassExW
-	RegisterRawInputDevices = HookRegisterRawInputDevices
-	GetMessageA = HookGetMessageA
-	GetMessageW = HookGetMessageW
-	PeekMessageA = HookPeekMessageA
-	PeekMessageW = HookPeekMessageW
-	GetCursorPos = HookGetCursorPosition
-	SetCursorPos = HookSetCursorPosition
 
 	; ws2_32.dll
 	send = HookSend

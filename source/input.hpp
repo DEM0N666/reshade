@@ -57,5 +57,7 @@ namespace reshade
 		uint8_t _keys[256] = { }, _mouse_buttons[5] = { };
 		short _mouse_wheel_delta = 0;
 		unsigned int _mouse_position[2] = { };
+		uint8_t      _preblocked_keys[256] = { }; // Set of keys (reference count) that were pressed when keyboard input blocking started
+		bool         _use_relative_mouse = false;    // For games that remove legacy mouse cursor events and use RawInput/DirectInput only
 	};
 }

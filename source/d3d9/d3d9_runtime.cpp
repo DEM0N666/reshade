@@ -183,7 +183,7 @@ namespace reshade::d3d9
 		_height = pp.BackBufferHeight;
 		_backbuffer_format = pp.BackBufferFormat;
 		_is_multisampling_enabled = pp.MultiSampleType != D3DMULTISAMPLE_NONE;
-		_input = input::register_window(pp.hDeviceWindow);
+		//_input = input::register_window(pp.hDeviceWindow);
 
 		if (FAILED(_device->CreateStateBlock(D3DSBT_ALL, &_stateblock)))
 		{

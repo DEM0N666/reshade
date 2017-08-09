@@ -87,7 +87,7 @@ namespace reshade
 		texture_format format = texture_format::unknown;
 		std::unordered_map<std::string, variant> annotations;
 		texture_reference impl_reference = texture_reference::none;
-		std::unique_ptr<base_object> impl;
+		std::shared_ptr<base_object> impl;
 	};
 	struct uniform final
 	{
@@ -102,7 +102,7 @@ namespace reshade
 	struct technique final
 	{
 		std::string name, effect_filename;
-		std::vector<std::unique_ptr<base_object>> passes;
+		std::vector<std::shared_ptr<base_object>> passes;
 		std::unordered_map<std::string, variant> annotations;
 		bool enabled = false, hidden = false;
 		int timeout = 0, timeleft = 0, toggle_key = 0;

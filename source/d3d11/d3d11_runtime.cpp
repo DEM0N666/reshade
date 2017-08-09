@@ -12,6 +12,10 @@
 #include <imgui.h>
 #include <algorithm>
 
+IMGUI_API
+void
+ImGui_ImplDX11_RenderDrawLists (ImDrawData* draw_data);
+
 namespace reshade::d3d11
 {
 	extern DXGI_FORMAT make_format_srgb(DXGI_FORMAT format);
@@ -247,176 +251,10 @@ namespace reshade::d3d11
 	}
 	bool d3d11_runtime::init_imgui_resources()
 	{
-		HRESULT hr = E_FAIL;
-
-		// Create the vertex shader
-		{
-			const resources::data_resource vs = resources::load_data_resource(IDR_RCDATA3);
-
-			hr = _device->CreateVertexShader(vs.data, vs.data_size, nullptr, &_imgui_vertex_shader);
-
-			if (FAILED(hr))
-			{
-				return false;
-			}
-
-			// Create the input layout
-			const D3D11_INPUT_ELEMENT_DESC input_layout[] = {
-				{ "POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(ImDrawVert, pos), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-				{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(ImDrawVert, uv), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-				{ "COLOR", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, offsetof(ImDrawVert, col), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-			};
-
-			hr = _device->CreateInputLayout(input_layout, _countof(input_layout), vs.data, vs.data_size, &_imgui_input_layout);
-
-			if (FAILED(hr))
-			{
-				return false;
-			}
-		}
-
-		// Create the pixel shader
-		{
-			const resources::data_resource ps = resources::load_data_resource(IDR_RCDATA4);
-
-			hr = _device->CreatePixelShader(ps.data, ps.data_size, nullptr, &_imgui_pixel_shader);
-
-			if (FAILED(hr))
-			{
-				return false;
-			}
-		}
-
-		// Create the constant buffer
-		{
-			D3D11_BUFFER_DESC desc = { };
-			desc.ByteWidth = 16 * sizeof(float);
-			desc.Usage = D3D11_USAGE_DYNAMIC;
-			desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-			desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-			hr = _device->CreateBuffer(&desc, nullptr, &_imgui_constant_buffer);
-
-			if (FAILED(hr))
-			{
-				return false;
-			}
-		}
-
-		// Create the blending setup
-		{
-			D3D11_BLEND_DESC desc = { };
-			desc.RenderTarget[0].BlendEnable = true;
-			desc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
-			desc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-			desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-			desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
-			desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
-			desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-			desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-
-			hr = _device->CreateBlendState(&desc, &_imgui_blend_state);
-
-			if (FAILED(hr))
-			{
-				return false;
-			}
-		}
-
-		// Create the depth stencil state
-		{
-			D3D11_DEPTH_STENCIL_DESC desc = { };
-			desc.DepthEnable = false;
-			desc.StencilEnable = false;
-
-			hr = _device->CreateDepthStencilState(&desc, &_imgui_depthstencil_state);
-
-			if (FAILED(hr))
-			{
-				return false;
-			}
-		}
-
-		// Create the rasterizer state
-		{
-			D3D11_RASTERIZER_DESC desc = { };
-			desc.FillMode = D3D11_FILL_SOLID;
-			desc.CullMode = D3D11_CULL_NONE;
-			desc.ScissorEnable = true;
-			desc.DepthClipEnable = true;
-
-			hr = _device->CreateRasterizerState(&desc, &_imgui_rasterizer_state);
-
-			if (FAILED(hr))
-			{
-				return false;
-			}
-		}
-
-		// Create texture sampler
-		{
-			D3D11_SAMPLER_DESC desc = { };
-			desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-			desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-			desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-			desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-			desc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-
-			hr = _device->CreateSamplerState(&desc, &_imgui_texture_sampler);
-
-			if (FAILED(hr))
-			{
-				return false;
-			}
-		}
-
 		return true;
 	}
 	bool d3d11_runtime::init_imgui_font_atlas()
 	{
-		int width, height;
-		unsigned char *pixels;
-
-		ImGui::SetCurrentContext(_imgui_context);
-		ImGui::GetIO().Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
-
-		const D3D11_TEXTURE2D_DESC tex_desc = {
-			static_cast<UINT>(width),
-			static_cast<UINT>(height),
-			1, 1,
-			DXGI_FORMAT_R8G8B8A8_UNORM,
-			{ 1, 0 },
-			D3D11_USAGE_DEFAULT,
-			D3D11_BIND_SHADER_RESOURCE
-		};
-		const D3D11_SUBRESOURCE_DATA tex_data = {
-			pixels,
-			tex_desc.Width * 4
-		};
-
-		com_ptr<ID3D11Texture2D> font_atlas;
-		com_ptr<ID3D11ShaderResourceView> font_atlas_view;
-
-		HRESULT hr = _device->CreateTexture2D(&tex_desc, &tex_data, &font_atlas);
-
-		if (FAILED(hr))
-		{
-			return false;
-		}
-
-		hr = _device->CreateShaderResourceView(font_atlas.get(), nullptr, &font_atlas_view);
-
-		if (FAILED(hr))
-		{
-			return false;
-		}
-
-		d3d11_tex_data obj = { };
-		obj.texture = font_atlas;
-		obj.srv[0] = font_atlas_view;
-
-		_imgui_font_atlas_texture = std::make_unique<d3d11_tex_data>(obj);
-
 		return true;
 	}
 
@@ -426,7 +264,7 @@ namespace reshade::d3d11
 		_height = desc.BufferDesc.Height;
 		_backbuffer_format = desc.BufferDesc.Format;
 		_is_multisampling_enabled = desc.SampleDesc.Count > 1;
-		_input = input::register_window(desc.OutputWindow);
+		//_input = input::register_window(desc.OutputWindow);
 
 		if (!init_backbuffer_texture() ||
 			!init_default_depth_stencil() ||
@@ -475,19 +313,6 @@ namespace reshade::d3d11
 		_copy_sampler.reset();
 
 		_effect_rasterizer_state.reset();
-
-		_imgui_vertex_buffer.reset();
-		_imgui_index_buffer.reset();
-		_imgui_vertex_shader.reset();
-		_imgui_pixel_shader.reset();
-		_imgui_input_layout.reset();
-		_imgui_constant_buffer.reset();
-		_imgui_texture_sampler.reset();
-		_imgui_rasterizer_state.reset();
-		_imgui_blend_state.reset();
-		_imgui_depthstencil_state.reset();
-		_imgui_vertex_buffer_size = 0;
-		_imgui_index_buffer_size = 0;
 	}
 	void d3d11_runtime::on_reset_effect()
 	{
@@ -917,137 +742,7 @@ namespace reshade::d3d11
 	}
 	void d3d11_runtime::render_imgui_draw_data(ImDrawData *draw_data)
 	{
-		// Create and grow vertex/index buffers if needed
-		if (_imgui_vertex_buffer == nullptr ||
-			_imgui_vertex_buffer_size < draw_data->TotalVtxCount)
-		{
-			_imgui_vertex_buffer.reset();
-			_imgui_vertex_buffer_size = draw_data->TotalVtxCount + 5000;
-
-			D3D11_BUFFER_DESC desc = { };
-			desc.Usage = D3D11_USAGE_DYNAMIC;
-			desc.ByteWidth = _imgui_vertex_buffer_size * sizeof(ImDrawVert);
-			desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-			desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-			desc.MiscFlags = 0;
-
-			if (FAILED(_device->CreateBuffer(&desc, nullptr, &_imgui_vertex_buffer)))
-			{
-				return;
-			}
-		}
-		if (_imgui_index_buffer == nullptr ||
-			_imgui_index_buffer_size < draw_data->TotalIdxCount)
-		{
-			_imgui_index_buffer.reset();
-			_imgui_index_buffer_size = draw_data->TotalIdxCount + 10000;
-
-			D3D11_BUFFER_DESC desc = { };
-			desc.Usage = D3D11_USAGE_DYNAMIC;
-			desc.ByteWidth = _imgui_index_buffer_size * sizeof(ImDrawIdx);
-			desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-			desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-			if (FAILED(_device->CreateBuffer(&desc, nullptr, &_imgui_index_buffer)))
-			{
-				return;
-			}
-		}
-
-		D3D11_MAPPED_SUBRESOURCE vtx_resource, idx_resource;
-
-		if (FAILED(_immediate_context->Map(_imgui_vertex_buffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &vtx_resource)) ||
-			FAILED(_immediate_context->Map(_imgui_index_buffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &idx_resource)))
-		{
-			return;
-		}
-
-		auto vtx_dst = static_cast<ImDrawVert *>(vtx_resource.pData);
-		auto idx_dst = static_cast<ImDrawIdx *>(idx_resource.pData);
-
-		for (int n = 0; n < draw_data->CmdListsCount; n++)
-		{
-			const ImDrawList *const cmd_list = draw_data->CmdLists[n];
-
-			CopyMemory(vtx_dst, &cmd_list->VtxBuffer.front(), cmd_list->VtxBuffer.size() * sizeof(ImDrawVert));
-			CopyMemory(idx_dst, &cmd_list->IdxBuffer.front(), cmd_list->IdxBuffer.size() * sizeof(ImDrawIdx));
-
-			vtx_dst += cmd_list->VtxBuffer.size();
-			idx_dst += cmd_list->IdxBuffer.size();
-		}
-
-		_immediate_context->Unmap(_imgui_vertex_buffer.get(), 0);
-		_immediate_context->Unmap(_imgui_index_buffer.get(), 0);
-
-		// Setup orthographic projection matrix
-		D3D11_MAPPED_SUBRESOURCE constant_buffer_data;
-
-		if (FAILED(_immediate_context->Map(_imgui_constant_buffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &constant_buffer_data)))
-		{
-			return;
-		}
-
-		const float ortho_projection[16] = {
-			2.0f / _width, 0.0f, 0.0f, 0.0f,
-			0.0f, -2.0f / _height, 0.0f, 0.0f,
-			0.0f, 0.0f, 0.5f, 0.0f,
-			-1.0f, 1.0f, 0.5f, 1.0f
-		};
-
-		CopyMemory(constant_buffer_data.pData, ortho_projection, sizeof(ortho_projection));
-
-		_immediate_context->Unmap(_imgui_constant_buffer.get(), 0);
-
-		// Setup render state
-		const auto render_target = _backbuffer_rtv[0].get();
-		_immediate_context->OMSetRenderTargets(1, &render_target, nullptr);
-
-		const D3D11_VIEWPORT viewport = { 0, 0, static_cast<float>(_width), static_cast<float>(_height), 0.0f, 1.0f };
-		_immediate_context->RSSetViewports(1, &viewport);
-
-		const float blend_factor[4] = { 0.f, 0.f, 0.f, 0.f };
-		_immediate_context->OMSetBlendState(_imgui_blend_state.get(), blend_factor, D3D11_DEFAULT_SAMPLE_MASK);
-		_immediate_context->OMSetDepthStencilState(_imgui_depthstencil_state.get(), 0);
-		_immediate_context->RSSetState(_imgui_rasterizer_state.get());
-
-		UINT stride = sizeof(ImDrawVert), offset = 0;
-		ID3D11Buffer *vertex_buffers[1] = { _imgui_vertex_buffer.get() };
-		ID3D11Buffer *constant_buffers[1] = { _imgui_constant_buffer.get() };
-		ID3D11SamplerState *samplers[1] = { _imgui_texture_sampler.get() };
-		_immediate_context->IASetInputLayout(_imgui_input_layout.get());
-		_immediate_context->IASetVertexBuffers(0, 1, vertex_buffers, &stride, &offset);
-		_immediate_context->IASetIndexBuffer(_imgui_index_buffer.get(), sizeof(ImDrawIdx) == 2 ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT, 0);
-		_immediate_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		_immediate_context->VSSetShader(_imgui_vertex_shader.get(), nullptr, 0);
-		_immediate_context->VSSetConstantBuffers(0, 1, constant_buffers);
-		_immediate_context->PSSetShader(_imgui_pixel_shader.get(), nullptr, 0);
-		_immediate_context->PSSetSamplers(0, 1, samplers);
-
-		// Render command lists
-		UINT vtx_offset = 0, idx_offset = 0;
-
-		for (int n = 0; n < draw_data->CmdListsCount; n++)
-		{
-			const ImDrawList *const cmd_list = draw_data->CmdLists[n];
-
-			for (const ImDrawCmd *cmd = cmd_list->CmdBuffer.begin(); cmd != cmd_list->CmdBuffer.end(); idx_offset += cmd->ElemCount, cmd++)
-			{
-				const D3D11_RECT scissor_rect = {
-					static_cast<LONG>(cmd->ClipRect.x),
-					static_cast<LONG>(cmd->ClipRect.y),
-					static_cast<LONG>(cmd->ClipRect.z),
-					static_cast<LONG>(cmd->ClipRect.w)
-				};
-
-				ID3D11ShaderResourceView *const texture_view = static_cast<const d3d11_tex_data *>(cmd->TextureId)->srv[0].get();
-				_immediate_context->PSSetShaderResources(0, 1, &texture_view);
-				_immediate_context->RSSetScissorRects(1, &scissor_rect);
-
-				_immediate_context->DrawIndexed(cmd->ElemCount, idx_offset, vtx_offset);
-			}
-
-			vtx_offset += cmd_list->VtxBuffer.size();
-		}
+    ImGui_ImplDX11_RenderDrawLists (draw_data);
 	}
 
 	void d3d11_runtime::detect_depth_source()

@@ -426,7 +426,7 @@ namespace reshade::d3d10
 		_height = desc.BufferDesc.Height;
 		_backbuffer_format = desc.BufferDesc.Format;
 		_is_multisampling_enabled = desc.SampleDesc.Count > 1;
-		_input = input::register_window(desc.OutputWindow);
+		//_input = input::register_window(desc.OutputWindow);
 
 		if (!init_backbuffer_texture() ||
 			!init_default_depth_stencil() ||

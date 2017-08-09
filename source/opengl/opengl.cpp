@@ -543,19 +543,19 @@ void WINAPI glDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsiz
 
 	trampoline(mode, first, count, primcount);
 }
-void WINAPI glDrawArraysInstancedARB(GLenum mode, GLint first, GLsizei count, GLsizei primcount)
-{
-	static const auto trampoline = reshade::hooks::call(&glDrawArraysInstancedARB);
-
-	const auto it = s_runtimes.find(wglGetCurrentDC());
-
-	if (it != s_runtimes.end())
-	{
-		it->second->on_draw_call(primcount * count);
-	}
-
-	trampoline(mode, first, count, primcount);
-}
+//void WINAPI glDrawArraysInstancedARB(GLenum mode, GLint first, GLsizei count, GLsizei primcount)
+//{
+//	static const auto trampoline = reshade::hooks::call(&glDrawArraysInstancedARB);
+//
+//	const auto it = s_runtimes.find(wglGetCurrentDC());
+//
+//	if (it != s_runtimes.end())
+//	{
+//		it->second->on_draw_call(primcount * count);
+//	}
+//
+//	trampoline(mode, first, count, primcount);
+//}
 void WINAPI glDrawArraysInstancedEXT(GLenum mode, GLint first, GLsizei count, GLsizei primcount)
 {
 	static const auto trampoline = reshade::hooks::call(&glDrawArraysInstancedEXT);
@@ -633,19 +633,19 @@ void WINAPI glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, con
 
 	trampoline(mode, count, type, indices, primcount);
 }
-void WINAPI glDrawElementsInstancedARB(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices, GLsizei primcount)
-{
-	static const auto trampoline = reshade::hooks::call(&glDrawElementsInstancedARB);
-
-	const auto it = s_runtimes.find(wglGetCurrentDC());
-
-	if (it != s_runtimes.end())
-	{
-		it->second->on_draw_call(primcount * count);
-	}
-
-	trampoline(mode, count, type, indices, primcount);
-}
+//void WINAPI glDrawElementsInstancedARB(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices, GLsizei primcount)
+//{
+//	static const auto trampoline = reshade::hooks::call(&glDrawElementsInstancedARB);
+//
+//	const auto it = s_runtimes.find(wglGetCurrentDC());
+//
+//	if (it != s_runtimes.end())
+//	{
+//		it->second->on_draw_call(primcount * count);
+//	}
+//
+//	trampoline(mode, count, type, indices, primcount);
+//}
 void WINAPI glDrawElementsInstancedEXT(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices, GLsizei primcount)
 {
 	static const auto trampoline = reshade::hooks::call(&glDrawElementsInstancedEXT);
@@ -932,19 +932,19 @@ void WINAPI glFramebufferTexture(GLenum target, GLenum attachment, GLuint textur
 		it->second->on_fbo_attachment(target, attachment, GL_TEXTURE, texture, level);
 	}
 }
-void WINAPI glFramebufferTextureARB(GLenum target, GLenum attachment, GLuint texture, GLint level)
-{
-	static const auto trampoline = reshade::hooks::call(&glFramebufferTextureARB);
-
-	trampoline(target, attachment, texture, level);
-
-	const auto it = s_runtimes.find(wglGetCurrentDC());
-
-	if (it != s_runtimes.end())
-	{
-		it->second->on_fbo_attachment(target, attachment, GL_TEXTURE, texture, level);
-	}
-}
+//void WINAPI glFramebufferTextureARB(GLenum target, GLenum attachment, GLuint texture, GLint level)
+//{
+//	static const auto trampoline = reshade::hooks::call(&glFramebufferTextureARB);
+//
+//	trampoline(target, attachment, texture, level);
+//
+//	const auto it = s_runtimes.find(wglGetCurrentDC());
+//
+//	if (it != s_runtimes.end())
+//	{
+//		it->second->on_fbo_attachment(target, attachment, GL_TEXTURE, texture, level);
+//	}
+//}
 void WINAPI glFramebufferTextureEXT(GLenum target, GLenum attachment, GLuint texture, GLint level)
 {
 	static const auto trampoline = reshade::hooks::call(&glFramebufferTextureEXT);
@@ -1049,19 +1049,19 @@ void WINAPI glFramebufferTextureLayer(GLenum target, GLenum attachment, GLuint t
 		it->second->on_fbo_attachment(target, attachment, GL_TEXTURE, texture, level);
 	}
 }
-void WINAPI glFramebufferTextureLayerARB(GLenum target, GLenum attachment, GLuint texture, GLint level, GLint layer)
-{
-	static const auto trampoline = reshade::hooks::call(&glFramebufferTextureLayerARB);
-
-	trampoline(target, attachment, texture, level, layer);
-
-	const auto it = s_runtimes.find(wglGetCurrentDC());
-
-	if (it != s_runtimes.end())
-	{
-		it->second->on_fbo_attachment(target, attachment, GL_TEXTURE, texture, level);
-	}
-}
+//void WINAPI glFramebufferTextureLayerARB(GLenum target, GLenum attachment, GLuint texture, GLint level, GLint layer)
+//{
+//	static const auto trampoline = reshade::hooks::call(&glFramebufferTextureLayerARB);
+//
+//	trampoline(target, attachment, texture, level, layer);
+//
+//	const auto it = s_runtimes.find(wglGetCurrentDC());
+//
+//	if (it != s_runtimes.end())
+//	{
+//		it->second->on_fbo_attachment(target, attachment, GL_TEXTURE, texture, level);
+//	}
+//}
 void WINAPI glFramebufferTextureLayerEXT(GLenum target, GLenum attachment, GLuint texture, GLint level, GLint layer)
 {
 	static const auto trampoline = reshade::hooks::call(&glFramebufferTextureLayerEXT);

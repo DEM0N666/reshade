@@ -118,6 +118,9 @@ namespace reshade
 		void set_uniform_value(uniform &variable, const unsigned int *values, size_t count);
 		void set_uniform_value(uniform &variable, const float *values, size_t count);
 
+
+    void draw_callback (void);
+
 	protected:
 		/// <summary>
 		/// Callback function called when the runtime is initialized.
