@@ -9,6 +9,16 @@
 #include <ShlObj.h>
 #include <Shlwapi.h>
 
+
+
+#define SPECIALK_IMPORT(ret) \
+  __declspec (dllimport) ##ret __stdcall
+
+SPECIALK_IMPORT  (const wchar_t *)
+SK_GetConfigPath (void);
+
+
+
 namespace reshade::filesystem
 {
 	bool path::operator==(const path &other) const
@@ -134,6 +144,12 @@ namespace reshade::filesystem
 
 		return utf16_to_utf8(result);
 	}
+
+	path get_profile_path (void)
+	{
+		return utf16_to_utf8 (SK_GetConfigPath ());
+	}
+
 	path get_special_folder_path(special_folder id)
 	{
 		WCHAR result[MAX_PATH] = { };

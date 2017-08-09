@@ -15,6 +15,10 @@ const auto D3DFMT_INTZ = static_cast<D3DFORMAT>(MAKEFOURCC('I', 'N', 'T', 'Z'));
 const auto D3DFMT_DF16 = static_cast<D3DFORMAT>(MAKEFOURCC('D', 'F', '1', '6'));
 const auto D3DFMT_DF24 = static_cast<D3DFORMAT>(MAKEFOURCC('D', 'F', '2', '4'));
 
+IMGUI_API
+void
+ImGui_ImplDX9_RenderDrawLists (ImDrawData* draw_data);
+
 namespace reshade::d3d9
 {
 	d3d9_runtime::d3d9_runtime(IDirect3DDevice9 *device, IDirect3DSwapChain9 *swapchain) :
@@ -145,43 +149,14 @@ namespace reshade::d3d9
 	}
 	bool d3d9_runtime::init_imgui_font_atlas()
 	{
-		int width, height, bits_per_pixel;
-		unsigned char *pixels;
-
-		ImGui::SetCurrentContext(_imgui_context);
-		ImGui::GetIO().Fonts->GetTexDataAsRGBA32(&pixels, &width, &height, &bits_per_pixel);
-
-		D3DLOCKED_RECT font_atlas_rect;
-		com_ptr<IDirect3DTexture9> font_atlas;
-
-		const HRESULT hr = _device->CreateTexture(width, height, 1, D3DUSAGE_DYNAMIC, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &font_atlas, nullptr);
-
-		if (FAILED(hr) || FAILED(font_atlas->LockRect(0, &font_atlas_rect, nullptr, 0)))
-		{
-			LOG(ERROR) << "Failed to create font atlas texture! HRESULT is '" << std::hex << hr << std::dec << "'.";
-			return false;
-		}
-
-		for (int y = 0; y < height; y++)
-		{
-			std::memcpy(static_cast<BYTE *>(font_atlas_rect.pBits) + font_atlas_rect.Pitch * y, pixels + (width * bits_per_pixel) * y, width * bits_per_pixel);
-		}
-
-		font_atlas->UnlockRect(0);
-
-		d3d9_tex_data obj = { };
-		obj.texture = font_atlas;
-
-		_imgui_font_atlas_texture = std::make_unique<d3d9_tex_data>(obj);
-
 		return true;
 	}
 
 	bool d3d9_runtime::on_init(const D3DPRESENT_PARAMETERS &pp)
 	{
-		_width = pp.BackBufferWidth;
-		_height = pp.BackBufferHeight;
-		_backbuffer_format = pp.BackBufferFormat;
+		_width                    = pp.BackBufferWidth;
+		_height                   = pp.BackBufferHeight;
+		_backbuffer_format        = pp.BackBufferFormat;
 		_is_multisampling_enabled = pp.MultiSampleType != D3DMULTISAMPLE_NONE;
 		//_input = input::register_window(pp.hDeviceWindow);
 
@@ -192,8 +167,7 @@ namespace reshade::d3d9
 
 		if (!init_backbuffer_texture() ||
 			!init_default_depth_stencil() ||
-			!init_fx_resources() ||
-			!init_imgui_font_atlas())
+			!init_fx_resources())
 		{
 			return false;
 		}
@@ -225,11 +199,6 @@ namespace reshade::d3d9
 
 		_effect_triangle_buffer.reset();
 		_effect_triangle_layout.reset();
-
-		_imgui_vertex_buffer.reset();
-		_imgui_index_buffer.reset();
-		_imgui_vertex_buffer_size = 0;
-		_imgui_index_buffer_size = 0;
 
 		// Clear depth source table
 		for (auto &it : _depth_source_table)
@@ -683,146 +652,7 @@ namespace reshade::d3d9
 	}
 	void d3d9_runtime::render_imgui_draw_data(ImDrawData *draw_data)
 	{
-		// Fixed-function vertex layout
-		struct vertex
-		{
-			float x, y, z;
-			D3DCOLOR col;
-			float u, v;
-		};
-
-		// Create and grow buffers if needed
-		if (_imgui_vertex_buffer == nullptr ||
-			_imgui_vertex_buffer_size < draw_data->TotalVtxCount)
-		{
-			_imgui_vertex_buffer.reset();
-			_imgui_vertex_buffer_size = draw_data->TotalVtxCount + 5000;
-
-			if (FAILED(_device->CreateVertexBuffer(_imgui_vertex_buffer_size * sizeof(vertex), D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY, D3DFVF_XYZ | D3DFVF_DIFFUSE | D3DFVF_TEX1, D3DPOOL_DEFAULT, &_imgui_vertex_buffer, nullptr)))
-			{
-				return;
-			}
-		}
-		if (_imgui_index_buffer == nullptr ||
-			_imgui_index_buffer_size < draw_data->TotalIdxCount)
-		{
-			_imgui_index_buffer.reset();
-			_imgui_index_buffer_size = draw_data->TotalIdxCount + 10000;
-
-			if (FAILED(_device->CreateIndexBuffer(_imgui_index_buffer_size * sizeof(ImDrawIdx), D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY, sizeof(ImDrawIdx) == 2 ? D3DFMT_INDEX16 : D3DFMT_INDEX32, D3DPOOL_DEFAULT, &_imgui_index_buffer, nullptr)))
-			{
-				return;
-			}
-		}
-
-		vertex *vtx_dst;
-		ImDrawIdx *idx_dst;
-
-		if (FAILED(_imgui_vertex_buffer->Lock(0, draw_data->TotalVtxCount * sizeof(vertex), reinterpret_cast<void **>(&vtx_dst), D3DLOCK_DISCARD)) ||
-			FAILED(_imgui_index_buffer->Lock(0, draw_data->TotalIdxCount * sizeof(ImDrawIdx), reinterpret_cast<void **>(&idx_dst), D3DLOCK_DISCARD)))
-		{
-			return;
-		}
-
-		for (int n = 0; n < draw_data->CmdListsCount; n++)
-		{
-			const ImDrawList *const cmd_list = draw_data->CmdLists[n];
-
-			for (auto vtx_src = cmd_list->VtxBuffer.begin(); vtx_src != cmd_list->VtxBuffer.end(); vtx_src++, vtx_dst++)
-			{
-				vtx_dst->x = vtx_src->pos.x;
-				vtx_dst->y = vtx_src->pos.y;
-				vtx_dst->z = 0.0f;
-
-				// RGBA --> ARGB for Direct3D 9
-				vtx_dst->col = (vtx_src->col & 0xFF00FF00) | ((vtx_src->col & 0xFF0000) >> 16) | ((vtx_src->col & 0xFF) << 16);
-
-				vtx_dst->u = vtx_src->uv.x;
-				vtx_dst->v = vtx_src->uv.y;
-			}
-
-			std::memcpy(idx_dst, &cmd_list->IdxBuffer.front(), cmd_list->IdxBuffer.size() * sizeof(ImDrawIdx));
-
-			idx_dst += cmd_list->IdxBuffer.size();
-		}
-
-		_imgui_vertex_buffer->Unlock();
-		_imgui_index_buffer->Unlock();
-
-		// Setup render state: fixed-pipeline, alpha-blending, no face culling, no depth testing
-		_device->SetRenderTarget(0, _backbuffer_resolved.get());
-		_device->SetDepthStencilSurface(nullptr);
-		_device->SetStreamSource(0, _imgui_vertex_buffer.get(), 0, sizeof(vertex));
-		_device->SetIndices(_imgui_index_buffer.get());
-		_device->SetFVF(D3DFVF_XYZ | D3DFVF_DIFFUSE | D3DFVF_TEX1);
-		_device->SetPixelShader(nullptr);
-		_device->SetVertexShader(nullptr);
-		_device->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
-		_device->SetRenderState(D3DRS_LIGHTING, false);
-		_device->SetRenderState(D3DRS_ZENABLE, false);
-		_device->SetRenderState(D3DRS_ALPHABLENDENABLE, true);
-		_device->SetRenderState(D3DRS_ALPHATESTENABLE, false);
-		_device->SetRenderState(D3DRS_BLENDOP, D3DBLENDOP_ADD);
-		_device->SetRenderState(D3DRS_BLENDOPALPHA, D3DBLENDOP_ADD);
-		_device->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
-		_device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
-		_device->SetRenderState(D3DRS_STENCILENABLE, false);
-		_device->SetRenderState(D3DRS_SCISSORTESTENABLE, true);
-		_device->SetRenderState(D3DRS_SRGBWRITEENABLE, false);
-		_device->SetRenderState(D3DRS_COLORWRITEENABLE, D3DCOLORWRITEENABLE_RED | D3DCOLORWRITEENABLE_GREEN | D3DCOLORWRITEENABLE_BLUE | D3DCOLORWRITEENABLE_ALPHA);
-		_device->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
-		_device->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
-		_device->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
-		_device->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
-		_device->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
-		_device->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
-		_device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
-		_device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
-
-		const D3DMATRIX identity_mat = {
-			1.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 1.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 1.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 1.0f
-		};
-		const D3DMATRIX ortho_projection = {
-			2.0f / _width, 0.0f, 0.0f, 0.0f,
-			0.0f, -2.0f / _height, 0.0f, 0.0f,
-			0.0f, 0.0f, 0.5f, 0.0f,
-			-(_width + 1.0f) / _width, (_height + 1.0f) / _height, 0.5f, 1.0f
-		};
-
-		_device->SetTransform(D3DTS_WORLD, &identity_mat);
-		_device->SetTransform(D3DTS_VIEW, &identity_mat);
-		_device->SetTransform(D3DTS_PROJECTION, &ortho_projection);
-
-		// Render command lists
-		UINT vtx_offset = 0, idx_offset = 0;
-
-		for (UINT i = 0; i < _num_samplers; i++)
-			_device->SetTexture(i, nullptr);
-
-		for (int n = 0; n < draw_data->CmdListsCount; n++)
-		{
-			const ImDrawList *const cmd_list = draw_data->CmdLists[n];
-
-			for (const ImDrawCmd *cmd = cmd_list->CmdBuffer.begin(); cmd != cmd_list->CmdBuffer.end(); idx_offset += cmd->ElemCount, cmd++)
-			{
-				const RECT scissor_rect = {
-					static_cast<LONG>(cmd->ClipRect.x),
-					static_cast<LONG>(cmd->ClipRect.y),
-					static_cast<LONG>(cmd->ClipRect.z),
-					static_cast<LONG>(cmd->ClipRect.w)
-				};
-
-				_device->SetTexture(0, static_cast<const d3d9_tex_data *>(cmd->TextureId)->texture.get());
-				_device->SetScissorRect(&scissor_rect);
-
-				_device->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, vtx_offset, 0, cmd_list->VtxBuffer.size(), idx_offset, cmd->ElemCount / 3);
-			}
-
-			vtx_offset += cmd_list->VtxBuffer.size();
-		}
+    ImGui_ImplDX9_RenderDrawLists (draw_data);
 	}
 
 	void d3d9_runtime::detect_depth_source()

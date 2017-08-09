@@ -13,6 +13,7 @@
 
 HMODULE g_module_handle = nullptr;
 
+
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpvReserved)
 {
 	UNREFERENCED_PARAMETER(lpvReserved);
@@ -26,11 +27,15 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpvReserved)
 			DisableThreadLibraryCalls(hModule);
 
 			g_module_handle = hModule;
-			runtime::s_reshade_dll_path = filesystem::get_module_path(hModule);
-			runtime::s_target_executable_path = filesystem::get_module_path(nullptr);
+			runtime::s_reshade_dll_path        = filesystem::get_module_path(hModule);
+			runtime::s_target_executable_path  = filesystem::get_module_path(nullptr);
+			runtime::s_profile_path            = filesystem::get_profile_path();
 			const filesystem::path system_path = filesystem::get_special_folder_path(filesystem::special_folder::system);
 
-			log::open(filesystem::path(runtime::s_reshade_dll_path).replace_extension(".log"));
+			// Localize to Special K's logs/... directory
+			const filesystem::path log_path    = runtime::s_profile_path + filesystem::path ("logs\\");
+
+			log::open (log_path + runtime::s_reshade_dll_path.filename_without_extension () + ".log");
 
 #ifdef WIN64
 #define VERSION_PLATFORM "64-bit"

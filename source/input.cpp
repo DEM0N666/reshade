@@ -17,7 +17,6 @@
 namespace reshade
 {
 	static critical_section s_cs;
-	static std::unordered_map<HWND, unsigned int> s_raw_input_windows;
 	static std::unordered_map<HWND, std::weak_ptr<input>> s_windows;
 
 	input::input(window_handle window) : _window(window)
@@ -25,18 +24,6 @@ namespace reshade
 		assert(window != nullptr);
 	}
 
-	void input::register_window_with_raw_input(window_handle window, bool no_legacy_keyboard, bool no_legacy_mouse)
-	{
-		const critical_section::lock lock(s_cs);
-
-		const auto flags = (no_legacy_keyboard ? 0x1 : 0u) | (no_legacy_mouse ? 0x2 : 0u);
-		const auto insert = s_raw_input_windows.emplace(static_cast<HWND>(window), flags);
-
-		if (!insert.second)
-		{
-			insert.first->second |= flags;
-		}
-	}
 	std::shared_ptr<input> input::register_window(window_handle window)
 	{
 		const HWND parent = GetParent(static_cast<HWND>(window));
@@ -68,7 +55,6 @@ namespace reshade
 	void input::uninstall()
 	{
 		s_windows.clear();
-		s_raw_input_windows.clear();
 	}
 
 	bool input::handle_window_message(const void *message_data)
@@ -209,7 +195,7 @@ namespace reshade
 
 	void input::block_mouse_input(bool enable)
 	{
-		ImGui::GetIO ().WantCaptureMouse = enable;
+		////ImGui::GetIO ().WantCaptureMouse = enable;
 
 		if (enable)
 		{
@@ -218,7 +204,7 @@ namespace reshade
 	}
 	void input::block_keyboard_input(bool enable)
 	{
-    ImGui::GetIO ().WantCaptureKeyboard = enable;
+    ////ImGui::GetIO ().WantCaptureKeyboard = enable;
 	}
 
 	void input::next_frame()

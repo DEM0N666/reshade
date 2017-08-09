@@ -10,6 +10,10 @@
 #include <imgui.h>
 #include <assert.h>
 
+IMGUI_API
+void
+ImGui_ImplGL3_RenderDrawLists (ImDrawData* draw_data);
+
 namespace reshade::opengl
 {
 	static GLenum target_to_binding(GLenum target)
@@ -238,86 +242,10 @@ namespace reshade::opengl
 	}
 	bool opengl_runtime::init_imgui_resources()
 	{
-		const GLchar *vertex_shader[] = {
-			"#version 330\n"
-			"uniform mat4 ProjMtx;\n"
-			"in vec2 Position, UV;\n"
-			"in vec4 Color;\n"
-			"out vec2 Frag_UV;\n"
-			"out vec4 Frag_Color;\n"
-			"void main()\n"
-			"{\n"
-			"	Frag_UV = UV;\n"
-			"	Frag_Color = Color;\n"
-			"	gl_Position = ProjMtx * vec4(Position.xy, 0, 1);\n"
-			"}\n"
-		};
-		const GLchar *fragment_shader[] = {
-			"#version 330\n"
-			"uniform sampler2D Texture;\n"
-			"in vec2 Frag_UV;\n"
-			"in vec4 Frag_Color;\n"
-			"out vec4 Out_Color;\n"
-			"void main()\n"
-			"{\n"
-			"	Out_Color = Frag_Color * texture(Texture, Frag_UV.st);\n"
-			"}\n"
-		};
-
-		_imgui_shader_program = glCreateProgram();
-		const auto imgui_vs = glCreateShader(GL_VERTEX_SHADER);
-		const auto imgui_fs = glCreateShader(GL_FRAGMENT_SHADER);
-		glShaderSource(imgui_vs, 1, vertex_shader, 0);
-		glShaderSource(imgui_fs, 1, fragment_shader, 0);
-		glCompileShader(imgui_vs);
-		glCompileShader(imgui_fs);
-		glAttachShader(_imgui_shader_program, imgui_vs);
-		glAttachShader(_imgui_shader_program, imgui_fs);
-		glLinkProgram(_imgui_shader_program);
-		glDeleteShader(imgui_vs);
-		glDeleteShader(imgui_fs);
-
-		_imgui_attribloc_tex = glGetUniformLocation(_imgui_shader_program, "Texture");
-		_imgui_attribloc_projmtx = glGetUniformLocation(_imgui_shader_program, "ProjMtx");
-		_imgui_attribloc_pos = glGetAttribLocation(_imgui_shader_program, "Position");
-		_imgui_attribloc_uv = glGetAttribLocation(_imgui_shader_program, "UV");
-		_imgui_attribloc_color = glGetAttribLocation(_imgui_shader_program, "Color");
-
-		glGenBuffers(2, _imgui_vbo);
-
-		glGenVertexArrays(1, &_imgui_vao);
-		glBindVertexArray(_imgui_vao);
-		glBindBuffer(GL_ARRAY_BUFFER, _imgui_vbo[0]);
-		glEnableVertexAttribArray(_imgui_attribloc_pos);
-		glEnableVertexAttribArray(_imgui_attribloc_uv);
-		glEnableVertexAttribArray(_imgui_attribloc_color);
-		glVertexAttribPointer(_imgui_attribloc_pos, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), reinterpret_cast<GLvoid *>(offsetof(ImDrawVert, pos)));
-		glVertexAttribPointer(_imgui_attribloc_uv, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), reinterpret_cast<GLvoid *>(offsetof(ImDrawVert, uv)));
-		glVertexAttribPointer(_imgui_attribloc_color, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), reinterpret_cast<GLvoid *>(offsetof(ImDrawVert, col)));
-
 		return true;
 	}
 	bool opengl_runtime::init_imgui_font_atlas()
 	{
-		int width, height;
-		unsigned char *pixels;
-
-		ImGui::SetCurrentContext(_imgui_context);
-		ImGui::GetIO().Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
-
-		GLuint font_atlas_id = 0;
-
-		glGenTextures(1, &font_atlas_id);
-		glBindTexture(GL_TEXTURE_2D, font_atlas_id);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-
-		opengl_tex_data obj = { };
-		obj.id[0] = font_atlas_id;
-
-		_imgui_font_atlas_texture = std::make_unique<opengl_tex_data>(obj);
-
 		return true;
 	}
 
@@ -333,9 +261,7 @@ namespace reshade::opengl
 
 		if (!init_backbuffer_texture() ||
 			!init_default_depth_stencil() ||
-			!init_fx_resources() ||
-			!init_imgui_resources() ||
-			!init_imgui_font_atlas())
+			!init_fx_resources())
 		{
 			_stateblock.apply();
 
@@ -363,9 +289,6 @@ namespace reshade::opengl
 		glDeleteRenderbuffers(2, _default_backbuffer_rbo);
 		glDeleteTextures(2, _backbuffer_texture);
 		glDeleteTextures(1, &_depth_texture);
-		glDeleteVertexArrays(1, &_imgui_vao);
-		glDeleteBuffers(2, _imgui_vbo);
-		glDeleteProgram(_imgui_shader_program);
 
 		_default_vao = 0;
 		_default_backbuffer_fbo = 0;
@@ -376,8 +299,6 @@ namespace reshade::opengl
 		_backbuffer_texture[0] = 0;
 		_backbuffer_texture[1] = 0;
 		_depth_texture = 0;
-		_imgui_shader_program = 0;
-		_imgui_vao = _imgui_vbo[0] = _imgui_vbo[1] = 0;
 
 		_depth_source = 0;
 	}
@@ -798,52 +719,7 @@ namespace reshade::opengl
 	}
 	void opengl_runtime::render_imgui_draw_data(ImDrawData *draw_data)
 	{
-		glEnable(GL_BLEND);
-		glBlendEquation(GL_FUNC_ADD);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glEnable(GL_SCISSOR_TEST);
-		glDisable(GL_STENCIL_TEST);
-		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-		glActiveTexture(GL_TEXTURE0);
-		glUseProgram(_imgui_shader_program);
-		glBindSampler(0, 0);
-		glBindVertexArray(_imgui_vao);
-		glViewport(0, 0, _width, _height);
-
-		const float ortho_projection[16] = {
-			2.0f / _width, 0.0f, 0.0f, 0.0f,
-			0.0f, -2.0f / _height, 0.0f, 0.0f,
-			0.0f, 0.0f, -1.0f, 0.0f,
-			-1.0f, 1.0f, 0.0f, 1.0f
-		};
-
-		glUniform1i(_imgui_attribloc_tex, 0);
-		glUniformMatrix4fv(_imgui_attribloc_projmtx, 1, GL_FALSE, ortho_projection);
-
-		// Render command lists
-		for (int n = 0; n < draw_data->CmdListsCount; n++)
-		{
-			const ImDrawIdx *idx_buffer_offset = 0;
-			ImDrawList *const cmd_list = draw_data->CmdLists[n];
-
-			glBindBuffer(GL_ARRAY_BUFFER, _imgui_vbo[0]);
-			glBufferData(GL_ARRAY_BUFFER, cmd_list->VtxBuffer.size() * sizeof(ImDrawVert), &cmd_list->VtxBuffer.front(), GL_STREAM_DRAW);
-
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _imgui_vbo[1]);
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER, cmd_list->IdxBuffer.size() * sizeof(ImDrawIdx), &cmd_list->IdxBuffer.front(), GL_STREAM_DRAW);
-
-			for (ImDrawCmd *cmd = cmd_list->CmdBuffer.begin(); cmd != cmd_list->CmdBuffer.end(); idx_buffer_offset += cmd->ElemCount, cmd++)
-			{
-				glScissor(
-					static_cast<GLint>(cmd->ClipRect.x),
-					static_cast<GLint>(_height - cmd->ClipRect.w),
-					static_cast<GLint>(cmd->ClipRect.z - cmd->ClipRect.x),
-					static_cast<GLint>(cmd->ClipRect.w - cmd->ClipRect.y));
-				glBindTexture(GL_TEXTURE_2D, static_cast<const opengl_tex_data *>(cmd->TextureId)->id[0]);
-
-				glDrawElements(GL_TRIANGLES, cmd->ElemCount, sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, idx_buffer_offset);
-			}
-		}
+    ImGui_ImplGL3_RenderDrawLists (draw_data);
 	}
 
 	void opengl_runtime::detect_depth_source()

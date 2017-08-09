@@ -16,7 +16,6 @@ namespace reshade
 
 		explicit input(window_handle window);
 
-		static void register_window_with_raw_input(window_handle window, bool no_legacy_keyboard, bool no_legacy_mouse);
 		static std::shared_ptr<input> register_window(window_handle window);
 		static void uninstall();
 
@@ -57,7 +56,5 @@ namespace reshade
 		uint8_t _keys[256] = { }, _mouse_buttons[5] = { };
 		short _mouse_wheel_delta = 0;
 		unsigned int _mouse_position[2] = { };
-		uint8_t      _preblocked_keys[256] = { }; // Set of keys (reference count) that were pressed when keyboard input blocking started
-		bool         _use_relative_mouse = false;    // For games that remove legacy mouse cursor events and use RawInput/DirectInput only
 	};
 }

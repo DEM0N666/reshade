@@ -39,6 +39,11 @@ namespace reshade
 		/// File path to the current executable.
 		/// </summary>
 		static filesystem::path s_target_executable_path;
+		/// <summary>
+		/// File path to the current game's profile directory.
+		/// </summary>
+		static filesystem::path s_profile_path;
+
 
 		/// <summary>
 		/// Construct a new runtime instance.
@@ -119,7 +124,7 @@ namespace reshade
 		void set_uniform_value(uniform &variable, const float *values, size_t count);
 
 
-    void draw_callback (void);
+    uint32_t draw_callback (void);
 
 	protected:
 		/// <summary>

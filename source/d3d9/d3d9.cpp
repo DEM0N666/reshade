@@ -8,6 +8,12 @@
 #include "d3d9_device.hpp"
 #include "d3d9_swapchain.hpp"
 
+#define SPECIALK_IMPORT(ret) \
+  __declspec (dllimport) ##ret __stdcall
+
+SPECIALK_IMPORT   (unsigned long)
+SK_GetFramesDrawn (void);
+
 #pragma region Undefine Function Names
 #undef IDirect3D9_CreateDevice
 #undef IDirect3D9Ex_CreateDeviceEx
@@ -78,7 +84,7 @@ HRESULT STDMETHODCALLTYPE IDirect3D9_CreateDevice(IDirect3D9 *pD3D, UINT Adapter
 		device->SetSoftwareVertexProcessing(TRUE);
 	}
 
-	if (DeviceType != D3DDEVTYPE_NULLREF)
+	if (DeviceType != D3DDEVTYPE_NULLREF  &&  (! SK_GetFramesDrawn ()))
 	{
 		IDirect3DSwapChain9 *swapchain = nullptr;
 		device->GetSwapChain(0, &swapchain);
@@ -155,7 +161,7 @@ HRESULT STDMETHODCALLTYPE IDirect3D9Ex_CreateDeviceEx(IDirect3D9Ex *pD3D, UINT A
 		device->SetSoftwareVertexProcessing(TRUE);
 	}
 
-	if (DeviceType != D3DDEVTYPE_NULLREF)
+	if (DeviceType != D3DDEVTYPE_NULLREF  &&  (! SK_GetFramesDrawn ()))
 	{
 		IDirect3DSwapChain9 *swapchain = nullptr;
 		device->GetSwapChain(0, &swapchain);

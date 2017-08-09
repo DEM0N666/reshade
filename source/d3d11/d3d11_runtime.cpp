@@ -268,9 +268,7 @@ namespace reshade::d3d11
 
 		if (!init_backbuffer_texture() ||
 			!init_default_depth_stencil() ||
-			!init_fx_resources() ||
-			!init_imgui_resources() ||
-			!init_imgui_font_atlas())
+			!init_fx_resources())
 		{
 			return false;
 		}
