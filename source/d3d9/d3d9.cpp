@@ -14,6 +14,8 @@
 SPECIALK_IMPORT   (unsigned long)
 SK_GetFramesDrawn (void);
 
+#define NO_TRANSIENT_API
+
 #pragma region Undefine Function Names
 #undef IDirect3D9_CreateDevice
 #undef IDirect3D9Ex_CreateDeviceEx
@@ -50,6 +52,7 @@ void dump_present_parameters(const D3DPRESENT_PARAMETERS &pp)
 // IDirect3D9
 HRESULT STDMETHODCALLTYPE IDirect3D9_CreateDevice(IDirect3D9 *pD3D, UINT Adapter, D3DDEVTYPE DeviceType, HWND hFocusWindow, DWORD BehaviorFlags, D3DPRESENT_PARAMETERS *pPresentationParameters, IDirect3DDevice9 **ppReturnedDeviceInterface)
 {
+
 	LOG(INFO) << "Redirecting '" << "IDirect3D9::CreateDevice" << "(" << pD3D << ", " << Adapter << ", " << DeviceType << ", " << hFocusWindow << ", " << std::hex << BehaviorFlags << std::dec << ", " << pPresentationParameters << ", " << ppReturnedDeviceInterface << ")' ...";
 
 	if (pPresentationParameters == nullptr)
@@ -84,7 +87,7 @@ HRESULT STDMETHODCALLTYPE IDirect3D9_CreateDevice(IDirect3D9 *pD3D, UINT Adapter
 		device->SetSoftwareVertexProcessing(TRUE);
 	}
 
-	if (DeviceType != D3DDEVTYPE_NULLREF  &&  (! SK_GetFramesDrawn ()))
+	if (DeviceType != D3DDEVTYPE_NULLREF)
 	{
 		IDirect3DSwapChain9 *swapchain = nullptr;
 		device->GetSwapChain(0, &swapchain);
@@ -254,6 +257,13 @@ HOOK_EXPORT IDirect3D9 *WINAPI Direct3DCreate9(UINT SDKVersion)
 		return nullptr;
 	}
 
+#ifdef NO_TRANSIENT_API
+  if (SK_GetFramesDrawn ())
+  {
+    return res;
+  }
+#endif
+
 	reshade::hooks::install(VTABLE(res), 16, reinterpret_cast<reshade::hook::address>(&IDirect3D9_CreateDevice));
 
 	LOG(INFO) << "Returning 'IDirect3D9' object " << res;
@@ -272,6 +282,13 @@ HOOK_EXPORT HRESULT WINAPI Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex **ppD
 
 		return hr;
 	}
+
+#ifdef NO_TRANSIENT_API
+  if (SK_GetFramesDrawn ())
+  {
+    return hr;
+  }
+#endif
 
 	reshade::hooks::install(VTABLE(*ppD3D), 16, reinterpret_cast<reshade::hook::address>(&IDirect3D9_CreateDevice));
 	reshade::hooks::install(VTABLE(*ppD3D), 20, reinterpret_cast<reshade::hook::address>(&IDirect3D9Ex_CreateDeviceEx));

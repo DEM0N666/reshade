@@ -170,7 +170,7 @@ namespace reshade
 		if (! _screenshot_key_setting_active &&
 			    ImGui::GetIO ().KeysDownDuration [_screenshot_key.keycode] == 0.0f                 &&
           ImGui::GetIO ().KeyCtrl                                    == _screenshot_key.ctrl &&
-          ImGui::GetIO ().KeyAlt                                     == _screenshot_key.shift )
+          ImGui::GetIO ().KeyShift                                   == _screenshot_key.shift )
 		{
 			save_screenshot ();
 		}
@@ -773,6 +773,7 @@ namespace reshade
 		{
 			_effect_search_paths.assign ( effect_search_paths.begin (),
 			                              effect_search_paths.end   () );
+			_effect_search_paths.emplace_back (s_profile_path + "ReShade\\Shaders");
 		}
 		else
 		{
@@ -786,6 +787,7 @@ namespace reshade
 		{
 			_texture_search_paths.assign ( texture_search_paths.begin (),
 			                               texture_search_paths.end   () );
+			_effect_search_paths.emplace_back (s_profile_path + "ReShade\\Textures");
 		}
 		else
 		{
@@ -1352,7 +1354,7 @@ namespace reshade
 
 			const float bottom_height = _performance_mode ? ImGui::GetItemsLineHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y : _variable_editor_height;
 
-			if (ImGui::BeginChild ("##techniques", ImVec2(-1, -bottom_height), true/*, ImGuiWindowFlags_NavFlattened*/))
+			if (ImGui::BeginChild ("##techniques", ImVec2(-1, -bottom_height), true, ImGuiWindowFlags_NavFlattened))
 			{
 				draw_overlay_technique_editor();
 			}
@@ -1389,7 +1391,7 @@ namespace reshade
 
 			const float bottom_height = ImGui::GetItemsLineHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y + (_tutorial_index == 3 ? 125 : 0);
 
-			if (ImGui::BeginChild("##variables", ImVec2(-1, -bottom_height), true/*, ImGuiWindowFlags_NavFlattened*/))
+			if (ImGui::BeginChild("##variables", ImVec2(-1, -bottom_height), true, ImGuiWindowFlags_NavFlattened))
 			{
 				draw_overlay_variable_editor();
 			}
@@ -2217,7 +2219,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 				ImGuiWindowFlags_NoInputs        |
 				ImGuiWindowFlags_NoFocusOnAppearing);
 
-			ImGui::TextUnformatted ("ReShade " VERSION_STRING_FILE " by crosire");
+			ImGui::TextUnformatted ("ReShade 3.0.7 created by crosire -- sliced and diced by Kaldaien for Special K");
 			ImGui::TextUnformatted ("Visit http://reshade.me for news, updates, shaders and discussion.");
 
 			ImGui::Spacing ();
@@ -2292,7 +2294,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 			{
 				ImGui::SetNextWindowPosCenter (                  ImGuiSetCond_Once);
 				ImGui::SetNextWindowSize      (ImVec2(710, 650), ImGuiSetCond_Once);
-				ImGui::Begin("ReShade " VERSION_STRING_FILE " by crosire###ReShade_Main", &_show_menu,
+				ImGui::Begin("ReShade 3.0.7 by crosire; modified for Special K by Kaldaien###ReShade_Main", &_show_menu,
 					             ImGuiWindowFlags_MenuBar |
 					             ImGuiWindowFlags_NoCollapse);
 

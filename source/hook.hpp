@@ -49,9 +49,18 @@ namespace reshade
 		/// <param name="enable">Boolean indicating if hook should be enabled or disabled.</param>
 		bool enable(bool enable = true) const;
 		/// <summary>
+		/// Enable or disable the hook.
+		/// </summary>
+		/// <param name="enable">Boolean indicating if hook should be enabled or disabled.</param>
+		bool queue(bool enable = true) const;
+		/// <summary>
 		/// Install the hook.
 		/// </summary>
 		status install();
+		/// <summary>
+		/// Queue the hook.
+		/// </summary>
+		status defer();
 		/// <summary>
 		/// Uninstall the hook.
 		/// </summary>

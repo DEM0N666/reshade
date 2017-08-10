@@ -25,7 +25,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
-    <OutDir>C:\Users\andon\Documents\My Mods\SpecialK\PlugIns\ThirdParty\ReShade</OutDir>
+    <OutDir>C:\Users\andon\Documents\My Mods\SpecialK\PlugIns\Unofficial\ReShade</OutDir>
     <IntDir>$(SolutionDir)intermediate\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>

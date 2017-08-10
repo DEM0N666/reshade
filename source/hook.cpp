@@ -61,6 +61,21 @@ namespace reshade
 			return statuscode == MH_OK || statuscode == MH_ERROR_DISABLED;
 		}
 	}
+	bool hook::queue(bool enable) const
+	{
+		if (enable)
+		{
+			const MH_STATUS statuscode = MH_QueueEnableHook(target);
+
+			return statuscode == MH_OK || statuscode == MH_ERROR_ENABLED;
+		}
+		else
+		{
+			const MH_STATUS statuscode = MH_QueueDisableHook(target);
+
+			return statuscode == MH_OK || statuscode == MH_ERROR_DISABLED;
+		}
+	}
 	hook::status hook::install()
 	{
 		if (!valid())
@@ -78,6 +93,34 @@ namespace reshade
 		if (statuscode == MH_OK || statuscode == MH_ERROR_ALREADY_CREATED)
 		{
 			enable();
+
+			return status::success;
+		}
+
+		if (--s_reference_count == 0)
+		{
+			MH_Uninitialize();
+		}
+
+		return static_cast<status>(statuscode);
+	}
+	hook::status hook::defer()
+	{
+		if (!valid())
+		{
+			return status::unsupported_function;
+		}
+
+		if (s_reference_count++ == 0)
+		{
+			MH_Initialize();
+		}
+
+		const MH_STATUS statuscode = MH_CreateHook(target, replacement, &trampoline);
+
+		if (statuscode == MH_OK || statuscode == MH_ERROR_ALREADY_CREATED)
+		{
+      queue ();
 
 			return status::success;
 		}
