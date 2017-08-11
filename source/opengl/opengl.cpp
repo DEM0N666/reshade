@@ -5,9 +5,9 @@
 
 #include "log.hpp"
 #include "hook_manager.hpp"
-#include "critical_section.hpp"
 #include "opengl_runtime.hpp"
 #include <assert.h>
+#include <mutex>
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
@@ -36,6 +36,7 @@
 #undef glDrawArraysIndirect
 #undef glDrawArraysInstanced
 #undef glDrawArraysInstancedBaseInstance
+#undef glDrawArraysInstancedARB
 #undef glDrawArraysInstancedEXT
 #undef glDrawBuffer
 #undef glDrawElements
@@ -45,6 +46,7 @@
 #undef glDrawElementsInstancedBaseVertex
 #undef glDrawElementsInstancedBaseInstance
 #undef glDrawElementsInstancedBaseVertexBaseInstance
+#undef glDrawElementsInstancedARB
 #undef glDrawElementsInstancedEXT
 #undef glDrawRangeElements
 #undef glDrawRangeElementsBaseVertex
@@ -56,7 +58,9 @@
 #undef glFramebufferTexture1D
 #undef glFramebufferTexture2D
 #undef glFramebufferTexture3D
+#undef glFramebufferTextureARB
 #undef glFramebufferTextureLayer
+#undef glFramebufferTextureLayerARB
 #undef glFrontFace
 #undef glGenTextures
 #undef glGetBooleanv
@@ -107,7 +111,7 @@
 
 DECLARE_HANDLE(HPBUFFERARB);
 
-static critical_section s_cs;
+static std::mutex s_mutex;
 static std::unordered_map<HWND, RECT> s_window_rects;
 static std::unordered_set<HDC> s_pbuffer_device_contexts;
 static std::unordered_map<HGLRC, HGLRC> s_shared_contexts;
@@ -3108,7 +3112,7 @@ HOOK_EXPORT HGLRC WINAPI wglCreateContext(HDC hdc)
 		return nullptr;
 	}
 
-	const critical_section::lock lock(s_cs);
+	const std::lock_guard<std::mutex> lock(s_mutex);
 
 	s_shared_contexts.emplace(hglrc, nullptr);
 
@@ -3141,7 +3145,7 @@ HGLRC WINAPI wglCreateContextAttribsARB(HDC hdc, HGLRC hShareContext, const int 
 
 	int i = 0, major = 1, minor = 0, flags = 0;
 	bool core = true, compatibility = false;
-	attribute attribs[7] = { 0, 0 };
+	attribute attribs[8] = { };
 
 	for (const int *attrib = piAttribList; attrib != nullptr && *attrib != 0 && i < 5; attrib += 2, ++i)
 	{
@@ -3172,10 +3176,12 @@ HGLRC WINAPI wglCreateContextAttribsARB(HDC hdc, HGLRC hShareContext, const int 
 	}
 
 #ifdef _DEBUG
-	attribs[i].name = attribute::WGL_CONTEXT_FLAGS_ARB;
-	attribs[i++].value = flags | attribute::WGL_CONTEXT_DEBUG_BIT_ARB;
+	flags |= attribute::WGL_CONTEXT_DEBUG_BIT_ARB;
 #endif
 
+	// This works because the specs specifically note that "If an attribute is specified more than once, then the last value specified is used."
+	attribs[i].name = attribute::WGL_CONTEXT_FLAGS_ARB;
+	attribs[i++].value = flags;
 	attribs[i].name = attribute::WGL_CONTEXT_PROFILE_MASK_ARB;
 	attribs[i++].value = compatibility ? attribute::WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB : attribute::WGL_CONTEXT_CORE_PROFILE_BIT_ARB;
 
@@ -3211,7 +3217,7 @@ HGLRC WINAPI wglCreateContextAttribsARB(HDC hdc, HGLRC hShareContext, const int 
 		return nullptr;
 	}
 
-	const critical_section::lock lock(s_cs);
+	const std::lock_guard<std::mutex> lock(s_mutex);
 
 	s_shared_contexts.emplace(hglrc, hShareContext);
 
@@ -3311,7 +3317,7 @@ HOOK_EXPORT BOOL WINAPI wglDeleteContext(HGLRC hglrc)
 
 	LOG(INFO) << "Redirecting '" << "wglDeleteContext" << "(" << hglrc << ")' ...";
 
-	const critical_section::lock lock(s_cs);
+	const std::lock_guard<std::mutex> lock(s_mutex);
 
 	for (auto it = s_shared_contexts.begin(); it != s_shared_contexts.end();)
 	{
@@ -3401,7 +3407,7 @@ HDC WINAPI wglGetPbufferDCARB(HPBUFFERARB hPbuffer)
 		return nullptr;
 	}
 
-	const critical_section::lock lock(s_cs);
+	const std::lock_guard<std::mutex> lock(s_mutex);
 
 	s_pbuffer_device_contexts.insert(hdc);
 
@@ -3456,7 +3462,7 @@ HOOK_EXPORT BOOL WINAPI wglMakeCurrent(HDC hdc, HGLRC hglrc)
 		return TRUE;
 	}
 	
-	const critical_section::lock lock(s_cs);
+	const std::lock_guard<std::mutex> lock(s_mutex);
 
 	const bool is_pbuffer_device_context = s_pbuffer_device_contexts.find(hdc) != s_pbuffer_device_contexts.end();
 	
@@ -3647,7 +3653,7 @@ int WINAPI wglReleasePbufferDCARB(HPBUFFERARB hPbuffer, HDC hdc)
 		return FALSE;
 	}
 
-	const critical_section::lock lock(s_cs);
+	const std::lock_guard<std::mutex> lock(s_mutex);
 
 	s_pbuffer_device_contexts.erase(hdc);
 
@@ -3673,7 +3679,7 @@ HOOK_EXPORT BOOL WINAPI wglShareLists(HGLRC hglrc1, HGLRC hglrc2)
 		return FALSE;
 	}
 
-	const critical_section::lock lock(s_cs);
+	const std::lock_guard<std::mutex> lock(s_mutex);
 
 	s_shared_contexts[hglrc2] = hglrc1;
 
@@ -3779,6 +3785,32 @@ HOOK_EXPORT PROC WINAPI wglGetProcAddress(LPCSTR lpszProc)
 
   if (first_call)
   {
+    // The gist of what's been done here is all GL hooks have been queued up and applied in a single batch job
+    //   rather than the original behavior, which hooked on-demand based on the extensions string.
+    // 
+    // The original solution is by all means a valid approach, it's just slow as dirt because each hook install
+    //   involves stopping all threads, modifying their IP pointer in case they're calling the function being
+    //     hooked, modifying the function prolog, resuming each running thread.
+    // 
+    //   That solution was both slow and dangerous to do back-to-back at application init.
+    //
+    // You can run into situations where, while you are starting and stopping your threads to install 20 odd hooks,
+    //   another piece of software injects itself and makes a mess of stuff. This was a frequent source of crashes
+    //     between my own software and ReShade whenever OpenGL was invovled.
+    // 
+    //
+    //   >> I am NOT familiar enough with the codebase to suggest this can be merged as-is. <<
+    //
+    //
+    // You have a wonderful thoughtful design here and I've just shot that all to hell :P
+    //
+    //
+    //  TL;DR: You will need to find a good way to wrap the QueueEnable and QueueDisable parts of the MinHook API.
+    //
+    //   Also please consider using a queue disable mechanism at runtime shutdown.
+    //     OpenGL programs often take 5 - 10 seconds to exit on my laptop because of the current unhook code.
+    //
+
 		reshade::hooks::defer(reinterpret_cast<reshade::hook::address>(trampoline("glDrawArraysIndirect")),                          reinterpret_cast<reshade::hook::address>(&glDrawArraysIndirect));
 		reshade::hooks::defer(reinterpret_cast<reshade::hook::address>(trampoline("glDrawArraysInstanced")),                         reinterpret_cast<reshade::hook::address>(&glDrawArraysInstanced));
 		reshade::hooks::defer(reinterpret_cast<reshade::hook::address>(trampoline("glDrawArraysInstancedARB")),                      reinterpret_cast<reshade::hook::address>(&glDrawArraysInstancedARB));

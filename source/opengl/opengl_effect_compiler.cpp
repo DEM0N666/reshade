@@ -429,7 +429,7 @@ namespace reshade::opengl
 
 			glBindBuffer(GL_UNIFORM_BUFFER, previous);
 
-			_runtime->_effect_ubos.push_back(std::make_pair(ubo, _uniform_buffer_size));
+			_runtime->_effect_ubos.emplace_back(ubo, _uniform_buffer_size);
 		}
 
 		return _success;
@@ -2172,12 +2172,11 @@ namespace reshade::opengl
 		glSamplerParameteri(sampler.id, GL_TEXTURE_WRAP_S, literal_to_wrap_mode(node->properties.address_u));
 		glSamplerParameteri(sampler.id, GL_TEXTURE_WRAP_T, literal_to_wrap_mode(node->properties.address_v));
 		glSamplerParameteri(sampler.id, GL_TEXTURE_WRAP_R, literal_to_wrap_mode(node->properties.address_w));
-		glSamplerParameteri(sampler.id, GL_TEXTURE_MIN_FILTER, minfilter);
 		glSamplerParameteri(sampler.id, GL_TEXTURE_MAG_FILTER, magfilter);
+		glSamplerParameteri(sampler.id, GL_TEXTURE_MIN_FILTER, minfilter);
 		glSamplerParameterf(sampler.id, GL_TEXTURE_LOD_BIAS, node->properties.lod_bias);
 		glSamplerParameterf(sampler.id, GL_TEXTURE_MIN_LOD, node->properties.min_lod);
 		glSamplerParameterf(sampler.id, GL_TEXTURE_MAX_LOD, node->properties.max_lod);
-		glSamplerParameterf(sampler.id, 0x84FE /* GL_TEXTURE_MAX_ANISOTROPY_EXT */, static_cast<GLfloat>(node->properties.max_anisotropy));
 
 		_global_code << "layout(binding = " << _runtime->_effect_samplers.size() << ") uniform sampler2D " << escape_name(node->unique_name) << ";\n";
 
@@ -2228,7 +2227,7 @@ namespace reshade::opengl
 
 		auto &uniform_storage = _runtime->get_uniform_value_storage();
 
-		if (_uniform_storage_offset + _uniform_buffer_size >= uniform_storage.size())
+		if (_uniform_storage_offset + _uniform_buffer_size >= static_cast<ptrdiff_t>(uniform_storage.size()))
 		{
 			uniform_storage.resize(uniform_storage.size() + 128);
 		}

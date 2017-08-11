@@ -4823,8 +4823,8 @@ extern RPC_IF_HANDLE __MIDL_itf_d3d11_3_0000_0009_v0_0_s_ifspec;
 
 
 
+#include <mutex>
 #include "runtime.hpp"
-#include "critical_section.hpp"
 #include "d3d11_stateblock.hpp"
 
 namespace reshade::d3d11
@@ -4911,7 +4911,7 @@ namespace reshade::d3d11
 		com_ptr<ID3D11VertexShader> _copy_vertex_shader;
 		com_ptr<ID3D11PixelShader> _copy_pixel_shader;
 		com_ptr<ID3D11SamplerState> _copy_sampler;
-		critical_section _cs;
+		std::mutex _mutex;
 		com_ptr<ID3D11RasterizerState> _effect_rasterizer_state;
 
 		com_ptr<ID3D11Buffer> _imgui_vertex_buffer, _imgui_index_buffer;

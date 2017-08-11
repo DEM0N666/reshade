@@ -23,7 +23,7 @@ namespace reshade::filesystem
 	public:
 		path() { }
 		path(const char *data) : _data(data) { }
-		path(const std::string &data) : _data(data) { }
+		path(std::string data) : _data(std::move(data)) { }
 
 		bool operator==(const path &other) const;
 		bool operator!=(const path &other) const;
@@ -59,7 +59,7 @@ namespace reshade::filesystem
 	path absolute(const path &filename, const path &parent_path);
 
 	path get_module_path(void *handle);
-	path get_profile_path(void);
+  path get_profile_path(void);
 	path get_special_folder_path(special_folder id);
 
 	std::vector<path> list_files(const path &path, const std::string &mask = "*", bool recursive = false);

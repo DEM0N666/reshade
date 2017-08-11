@@ -116,6 +116,10 @@ HRESULT STDMETHODCALLTYPE IDirect3D9_CreateDevice(IDirect3D9 *pD3D, UINT Adapter
 			device->GetDepthStencilSurface(&device_proxy->_auto_depthstencil);
 			device_proxy->SetDepthStencilSurface(device_proxy->_auto_depthstencil);
 		}
+
+		// Upgrade to extended interface if available
+		com_ptr<IDirect3DDevice9Ex> deviceex;
+		device_proxy->QueryInterface(IID_PPV_ARGS(&deviceex));
 	}
 	else
 	{
@@ -264,7 +268,7 @@ HOOK_EXPORT IDirect3D9 *WINAPI Direct3DCreate9(UINT SDKVersion)
   }
 #endif
 
-	reshade::hooks::install(VTABLE(res), 16, reinterpret_cast<reshade::hook::address>(&IDirect3D9_CreateDevice));
+	reshade::hooks::install(vtable_from_instance(res), 16, reinterpret_cast<reshade::hook::address>(&IDirect3D9_CreateDevice));
 
 	LOG(INFO) << "Returning 'IDirect3D9' object " << res;
 
@@ -290,8 +294,8 @@ HOOK_EXPORT HRESULT WINAPI Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex **ppD
   }
 #endif
 
-	reshade::hooks::install(VTABLE(*ppD3D), 16, reinterpret_cast<reshade::hook::address>(&IDirect3D9_CreateDevice));
-	reshade::hooks::install(VTABLE(*ppD3D), 20, reinterpret_cast<reshade::hook::address>(&IDirect3D9Ex_CreateDeviceEx));
+  reshade::hooks::install(vtable_from_instance(*ppD3D), 16, reinterpret_cast<reshade::hook::address>(&IDirect3D9_CreateDevice));
+  reshade::hooks::install(vtable_from_instance(*ppD3D), 20, reinterpret_cast<reshade::hook::address>(&IDirect3D9Ex_CreateDeviceEx));
 
 	LOG(INFO) << "Returning 'IDirect3D9Ex' object " << *ppD3D;
 

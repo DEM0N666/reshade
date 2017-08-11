@@ -9,7 +9,14 @@
 #include "filesystem.hpp"
 
 #define HOOK_EXPORT extern "C"
-#define VTABLE(object) (*reinterpret_cast<reshade::hook::address **>(object))
+
+template <typename T>
+inline reshade::hook::address *vtable_from_instance(T *instance)
+{
+	static_assert(std::is_polymorphic<T>::value, "can only get virtual function table from polymorphic types");
+
+	return *reinterpret_cast<reshade::hook::address **>(instance);
+}
 
 namespace reshade::hooks
 {
@@ -29,13 +36,15 @@ namespace reshade::hooks
 	/// <param name="replacement">The address of the hook function.</param>
 	/// <returns>The status of the hook installation.</returns>
 	bool install(hook::address vtable[], unsigned int offset, hook::address replacement);
-  bool defer(hook::address vtable[], unsigned int offset, hook::address replacement);
+	bool defer(hook::address vtable[], unsigned int offset, hook::address replacement);
 	/// <summary>
 	/// Uninstall all previously installed hooks.
+	/// Only call this function as long as the loader-lock is active, since it is not thread-safe.
 	/// </summary>
 	void uninstall();
 	/// <summary>
 	/// Register the matching exports in the specified module and install or delay their hooking.
+	/// Only call this function as long as the loader-lock is active, since it is not thread-safe.
 	/// </summary>
 	/// <param name="path">The file path to the target module.</param>
 	void register_module(const filesystem::path &path);
@@ -52,5 +61,5 @@ namespace reshade::hooks
 		return reinterpret_cast<T>(call(reinterpret_cast<hook::address>(replacement)));
 	}
 
-  void apply_queued(void);
+	void apply_queued(void);
 }

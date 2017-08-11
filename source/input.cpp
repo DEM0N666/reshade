@@ -7,16 +7,16 @@
 #include "hook_manager.hpp"
 #include "log.hpp"
 #include "input.hpp"
-#include "critical_section.hpp"
 #include <Windows.h>
 #include <assert.h>
+#include <mutex>
 #include <unordered_map>
 
 #include "imgui.h"
 
 namespace reshade
 {
-	static critical_section s_cs;
+	static std::mutex s_mutex;
 	static std::unordered_map<HWND, std::weak_ptr<input>> s_windows;
 
 	input::input(window_handle window) : _window(window)
@@ -33,7 +33,7 @@ namespace reshade
 			window = parent;
 		}
 
-		const critical_section::lock lock(s_cs);
+		const std::lock_guard<std::mutex> lock(s_mutex);
 
 		const auto insert = s_windows.emplace(static_cast<HWND>(window), std::weak_ptr<input>());
 
