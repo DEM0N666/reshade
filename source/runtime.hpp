@@ -124,6 +124,7 @@ namespace reshade
 		void set_uniform_value(uniform &variable, const float *values, size_t count);
 
 
+    bool     toggle_menu   (void);
     uint32_t draw_callback (void);
 
 	protected:
@@ -197,7 +198,7 @@ namespace reshade
 		std::vector<technique> _techniques;
 
 	private:
-		struct key_shortcut { int keycode; bool ctrl, shift; };
+		struct key_shortcut { uint8_t keycode; bool ctrl, shift; };
 
 		void reload();
 		void load_configuration();
@@ -238,5 +239,6 @@ namespace reshade
 		unsigned int _effects_expanded_state = 2;
 		char _effect_filter_buffer[64] = { };
 		size_t _reload_remaining_effects = 0, _texture_count = 0, _uniform_count = 0, _technique_count = 0;
+    bool _installed_sk_callbacks;
 	};
 }

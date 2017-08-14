@@ -27,7 +27,7 @@ namespace reshade::hooks
 	/// <param name="replacement">The address of the hook function.</param>
 	/// <returns>The status of the hook installation.</returns>
 	bool install(hook::address target, hook::address replacement);
-	bool defer  (hook::address target, hook::address replacement);
+  bool queue(hook::address target, hook::address replacement);
 	/// <summary>
 	/// Install hook for the specified virtual function table entry.
 	/// </summary>
@@ -36,7 +36,6 @@ namespace reshade::hooks
 	/// <param name="replacement">The address of the hook function.</param>
 	/// <returns>The status of the hook installation.</returns>
 	bool install(hook::address vtable[], unsigned int offset, hook::address replacement);
-	bool defer(hook::address vtable[], unsigned int offset, hook::address replacement);
 	/// <summary>
 	/// Uninstall all previously installed hooks.
 	/// Only call this function as long as the loader-lock is active, since it is not thread-safe.
@@ -61,5 +60,5 @@ namespace reshade::hooks
 		return reinterpret_cast<T>(call(reinterpret_cast<hook::address>(replacement)));
 	}
 
-	void apply_queued(void);
+  bool apply_queued (void);
 }

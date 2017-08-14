@@ -36,17 +36,31 @@
 SPECIALK_IMPORT (bool)
 SK_CreateDirectories ( const wchar_t* wszPath );
 
+
 __declspec (dllexport)
 uint32_t
 __stdcall
 SK_ImGui_DrawCallback (void* user);
 
-typedef uint32_t (__stdcall *SK_ImGui_DrawCallback_pfn)(void *user);
+__declspec (dllexport)
+bool
+__stdcall
+SK_ImGui_OpenCloseCallback (void* user);
 
-IMGUI_API
+
+typedef uint32_t (__stdcall *SK_ImGui_DrawCallback_pfn)     (void *user);
+typedef bool     (__stdcall *SK_ImGui_OpenCloseCallback_pfn)(void *user);
+
+__declspec (dllimport)
 void
 SK_ImGui_InstallDrawCallback (SK_ImGui_DrawCallback_pfn fn, void* user);
 
+__declspec (dllimport)
+void
+SK_ImGui_InstallOpenCloseCallback (SK_ImGui_OpenCloseCallback_pfn fn, void* user);
+
+
+#include <Windows.h>
 #include <unordered_set>
 
 
@@ -73,50 +87,15 @@ namespace reshade
 		_screenshot_path       (s_target_executable_path.parent_path ()),
 		_variable_editor_height(300)
 	{
-		//auto& imgui_io =
-		//	ImGui::GetIO ();
-
-		SK_ImGui_InstallDrawCallback (SK_ImGui_DrawCallback, this);
-
-		//auto &imgui_style = _imgui_context->Style;
-		//imgui_io.Fonts = _imgui_font_atlas.get();
-		//imgui_io.IniFilename = nullptr;
-		//imgui_io.KeyMap[ImGuiKey_Tab] = 0x09; // VK_TAB
-		//imgui_io.KeyMap[ImGuiKey_LeftArrow] = 0x25; // VK_LEFT
-		//imgui_io.KeyMap[ImGuiKey_RightArrow] = 0x27; // VK_RIGHT
-		//imgui_io.KeyMap[ImGuiKey_UpArrow] = 0x26; // VK_UP
-		//imgui_io.KeyMap[ImGuiKey_DownArrow] = 0x28; // VK_DOWN
-		//imgui_io.KeyMap[ImGuiKey_PageUp] = 0x21; // VK_PRIOR
-		//imgui_io.KeyMap[ImGuiKey_PageDown] = 0x22; // VK_NEXT
-		//imgui_io.KeyMap[ImGuiKey_Home] = 0x24; // VK_HOME
-		//imgui_io.KeyMap[ImGuiKey_End] = 0x23; // VK_END
-		//imgui_io.KeyMap[ImGuiKey_Delete] = 0x2E; // VK_DELETE
-		//imgui_io.KeyMap[ImGuiKey_Backspace] = 0x08; // VK_BACK
-		//imgui_io.KeyMap[ImGuiKey_Enter] = 0x0D; // VK_RETURN
-		//imgui_io.KeyMap[ImGuiKey_Escape] = 0x1B; // VK_ESCAPE
-		//imgui_io.KeyMap[ImGuiKey_A] = 'A';
-		//imgui_io.KeyMap[ImGuiKey_C] = 'C';
-		//imgui_io.KeyMap[ImGuiKey_V] = 'V';
-		//imgui_io.KeyMap[ImGuiKey_X] = 'X';
-		//imgui_io.KeyMap[ImGuiKey_Y] = 'Y';
-		//imgui_io.KeyMap[ImGuiKey_Z] = 'Z';
-		//imgui_style.WindowRounding = 0.0f;
-		//imgui_style.ChildWindowRounding = 0.0f;
-		//imgui_style.FrameRounding = 0.0f;
-		//imgui_style.ScrollbarRounding = 0.0f;
-		//imgui_style.GrabRounding = 0.0f;
-
-		//_imgui_font_atlas->AddFontDefault();
-		//const auto font_path = filesystem::get_special_folder_path(filesystem::special_folder::windows) / "Fonts" / "consolab.ttf";
-		//if (filesystem::exists(font_path))
-			//_imgui_font_atlas->AddFontFromFileTTF(font_path.string().c_str(), 18.0f);
-		//else
-			//_imgui_font_atlas->AddFontDefault();
-
 		load_configuration ();
 	}
 	runtime::~runtime ()
 	{
+		if (_installed_sk_callbacks)
+		{
+			SK_ImGui_InstallDrawCallback      (nullptr, nullptr);
+			SK_ImGui_InstallOpenCloseCallback (nullptr, nullptr);
+		}
 		assert ((! _is_initialized) && _techniques.empty ());
 	}
 
@@ -162,6 +141,13 @@ namespace reshade
 
 	void runtime::on_present ()
 	{
+		if (_framecount == 0)
+		{
+			_installed_sk_callbacks = true;
+			SK_ImGui_InstallDrawCallback      (SK_ImGui_DrawCallback,      this);
+			SK_ImGui_InstallOpenCloseCallback (SK_ImGui_OpenCloseCallback, this);
+		}
+
 		// Get current time and date
 		time_t t = std::time (nullptr); tm tm;
 		localtime_s (&tm, &t);
@@ -171,7 +157,6 @@ namespace reshade
 		_date [3] = tm.tm_hour * 3600 + tm.tm_min * 60 + tm.tm_sec;
 
 		// Advance various statistics
-		g_network_traffic    = 0;
 		_framecount++;
 		_drawcalls           = _vertices = 0;
 		_last_frame_duration = std::chrono::high_resolution_clock::now () - _last_present_time;
@@ -779,7 +764,7 @@ namespace reshade
 		const auto effect_search_paths = config.get ("GENERAL", "EffectSearchPaths", _effect_search_paths).data ();
 
     // Localized for Special K
-		if (! filesystem::exists (s_profile_path + "ReShade\\Shaders"))
+		if ((! filesystem::exists (s_profile_path + "ReShade\\Shaders")) || filesystem::list_files (s_profile_path + "ReShade\\Shaders").empty ())
 		{
 			_effect_search_paths.assign ( effect_search_paths.begin (),
 			                              effect_search_paths.end   () );
@@ -793,11 +778,11 @@ namespace reshade
 
 		const auto texture_search_paths = config.get ("GENERAL", "TextureSearchPaths", _texture_search_paths).data ();
 
-		if (! filesystem::exists (s_profile_path + "ReShade\\Textures"))
+		if ((! filesystem::exists (s_profile_path + "ReShade\\Textures")) || filesystem::list_files (s_profile_path + "ReShade\\Textures").empty ())
 		{
 			_texture_search_paths.assign ( texture_search_paths.begin (),
 			                               texture_search_paths.end   () );
-			_effect_search_paths.emplace_back (s_profile_path + "ReShade\\Textures");
+			_texture_search_paths.emplace_back (s_profile_path + "ReShade\\Textures");
 		}
 		else
 		{
@@ -945,9 +930,9 @@ namespace reshade
 		path.replace_extension  (".ini");
 		ini_file         config (  path);
 
-		config.set ("INPUT", "KeyMenu",       { _menu_key.keycode,       _menu_key.ctrl       ? 1 : 0, _menu_key.shift       ? 1 : 0 });
-		config.set ("INPUT", "KeyScreenshot", { _screenshot_key.keycode, _screenshot_key.ctrl ? 1 : 0, _screenshot_key.shift ? 1 : 0 });
-		config.set ("INPUT", "KeyEffects",    { _effects_key.keycode,    _effects_key.ctrl    ? 1 : 0, _effects_key.shift    ? 1 : 0 });
+		config.set ("INPUT", "KeyMenu",       { (int)_menu_key.keycode,       _menu_key.ctrl       ? 1 : 0, _menu_key.shift       ? 1 : 0 });
+		config.set ("INPUT", "KeyScreenshot", { (int)_screenshot_key.keycode, _screenshot_key.ctrl ? 1 : 0, _screenshot_key.shift ? 1 : 0 });
+		config.set ("INPUT", "KeyEffects",    { (int)_effects_key.keycode,    _effects_key.ctrl    ? 1 : 0, _effects_key.shift    ? 1 : 0 });
 
 		config.set ("GENERAL", "PerformanceMode",         _performance_mode);
 		//config.set ("GENERAL", "EffectSearchPaths",     _effect_search_paths);
@@ -1362,6 +1347,8 @@ namespace reshade
 
 	void runtime::draw_overlay_menu_settings ()
 	{
+		if (ImGui::BeginChild ("###ReShade_Settings", ImVec2(-1, -1), true, ImGuiWindowFlags_NavFlattened))
+		{
 		char edit_buffer [2048] = { };
 
 		const auto
@@ -1479,25 +1466,25 @@ namespace reshade
 				reload             ();
 			}
 
-			copy_search_paths_to_edit_buffer (_effect_search_paths);
-
-			if (ImGui::InputTextMultiline ("Effect Search Paths", edit_buffer, sizeof (edit_buffer), ImVec2(0, 60)))
-			{
-				const auto effect_search_paths = split(edit_buffer, '\n');
-				_effect_search_paths.assign (effect_search_paths.begin (), effect_search_paths.end());
-
-				save_configuration ();
-			}
-
-			copy_search_paths_to_edit_buffer(_texture_search_paths);
-
-			if (ImGui::InputTextMultiline ("Texture Search Paths", edit_buffer, sizeof (edit_buffer), ImVec2(0, 60)))
-			{
-				const auto texture_search_paths = split (edit_buffer, '\n');
-				_texture_search_paths.assign (texture_search_paths.begin (), texture_search_paths.end ());
-
-				save_configuration ();
-			}
+			//copy_search_paths_to_edit_buffer (_effect_search_paths);
+      //
+			//if (ImGui::InputTextMultiline ("Effect Search Paths", edit_buffer, sizeof (edit_buffer), ImVec2(0, 60)))
+			//{
+			//	const auto effect_search_paths = split(edit_buffer, '\n');
+			//	_effect_search_paths.assign (effect_search_paths.begin (), effect_search_paths.end());
+      //
+			//	save_configuration ();
+			//}
+      //
+			//copy_search_paths_to_edit_buffer(_texture_search_paths);
+      //
+			//if (ImGui::InputTextMultiline ("Texture Search Paths", edit_buffer, sizeof (edit_buffer), ImVec2(0, 60)))
+			//{
+			//	const auto texture_search_paths = split (edit_buffer, '\n');
+			//	_texture_search_paths.assign (texture_search_paths.begin (), texture_search_paths.end ());
+      //
+			//	save_configuration ();
+			//}
 
 			copy_vector_to_edit_buffer (_preprocessor_definitions);
 
@@ -1565,11 +1552,11 @@ namespace reshade
 			            ImGui::SameLine (0, 10);
 			modified |= ImGui::Checkbox ("Show FPS",   &_show_framerate);
 
-			modified |= ImGui::ColorEdit3 ("Background Color",      _imgui_col_background);
-			modified |= ImGui::ColorEdit3 ("Item Background Color", _imgui_col_item_background);
-			modified |= ImGui::ColorEdit3 ("Active Item Color",     _imgui_col_active);
-			modified |= ImGui::ColorEdit3 ("Text Color",            _imgui_col_text);
-			modified |= ImGui::ColorEdit3 ("FPS Text Color",        _imgui_col_text_fps);
+			//modified |= ImGui::ColorEdit3 ("Background Color",      _imgui_col_background);
+			//modified |= ImGui::ColorEdit3 ("Item Background Color", _imgui_col_item_background);
+			//modified |= ImGui::ColorEdit3 ("Active Item Color",     _imgui_col_active);
+			//modified |= ImGui::ColorEdit3 ("Text Color",            _imgui_col_text);
+			//modified |= ImGui::ColorEdit3 ("FPS Text Color",        _imgui_col_text_fps);
 
 			if (modified)
 			{
@@ -1577,6 +1564,8 @@ namespace reshade
 				load_configuration ();
 			}
 		}
+    }
+		ImGui::EndChild ();
 	}
 	void runtime::draw_overlay_menu_statistics ()
 	{
@@ -1601,7 +1590,6 @@ namespace reshade
 			ImGui::TextUnformatted ("Draw Calls:"                 );
 			ImGui::Text            ("Frame %llu:", _framecount + 1);
 			ImGui::TextUnformatted ("Timer:"                      );
-			ImGui::TextUnformatted ("Network (traffic per frame):");
 			ImGui::EndGroup        (                              );
 
 			ImGui::SameLine        ();
@@ -1617,7 +1605,6 @@ namespace reshade
 			ImGui::Text       ("%u (%u vertices)", _drawcalls, _vertices);
 			ImGui::Text       ("%f ms",            _last_frame_duration.count () * 1e-6f);
 			ImGui::Text       ("%f ms",            std::fmod(std::chrono::duration_cast<std::chrono::nanoseconds>(_last_present_time - _start_time).count() * 1e-6f, 16777216.0f));
-			ImGui::Text       ("%u B",             g_network_traffic);
 
 			ImGui::EndGroup      ( );
       ImGui::PopStyleColor (2);
@@ -2135,6 +2122,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 		}
 	}
 
+  bool
+  runtime::toggle_menu (void)
+  {
+    _show_menu = (! _show_menu);
+
+    return _show_menu;
+  }
+
 	uint32_t
 	runtime::draw_callback (void)
 	{
@@ -2147,6 +2142,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 		      imgui_io.KeyShift                             == _menu_key.shift )
 		{
 			_show_menu = (! _show_menu);
+			ImGui::SetNextWindowFocus ();
 		}
 
 		// Update ImGui configuration
@@ -2154,7 +2150,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 		const bool show_splash =
 			std::chrono::duration_cast <std::chrono::seconds> ( _last_present_time -
-			                                                    _last_reload_time  ).count () < 5;
+			                                                    _last_reload_time  ).count () < 10;
 
     // Don't want this in Special K -- I have my own system for doing that
     //
@@ -2170,10 +2166,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 		if (show_splash)
 		{
+			static bool is_unx = GetModuleHandle (L"UnX.dll");
 			ImGui::PushStyleColor    (ImGuiCol_Text,     ImVec4 (1.f,   1.f,   1.f,   1.f));
 			ImGui::PushStyleColor    (ImGuiCol_WindowBg, ImVec4 (.222f, .222f, .222f, 1.f));
 			ImGui::SetNextWindowPos  (ImVec2 (10, 10));
-			ImGui::SetNextWindowSize (ImVec2 (_width - 20.0f, ImGui::GetItemsLineHeightWithSpacing() * 3), ImGuiSetCond_Appearing);
+			ImGui::SetNextWindowSize (ImVec2 (_width - 20.0f, ImGui::GetItemsLineHeightWithSpacing () * 4.5f), ImGuiSetCond_Appearing);
 			ImGui::Begin             ( "Splash Screen##ReShade",
 			                             nullptr, ImVec2 (), -1,
 			                               ImGuiWindowFlags_NoTitleBar      |
@@ -2184,7 +2181,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 			                               ImGuiWindowFlags_NoInputs        |
 			                               ImGuiWindowFlags_NoFocusOnAppearing );
 
-			ImGui::TextColored     (ImColor::HSV (.11f, 1.f, 1.f),  "Unofficial ReShade 3.0.7"); ImGui::SameLine ();
+			ImGui::TextColored     (ImColor::HSV (.11f, 1.f, 1.f),  "Unofficial ReShade 3.0.8"); ImGui::SameLine ();
 			ImGui::TextUnformatted (                                "created by crosire,");      ImGui::SameLine ();
 			ImGui::TextColored     (ImColor::HSV (.29f, .95f, 1.f), "modified for Special K");   ImGui::SameLine ();
 			ImGui::TextUnformatted (                                "by Kaldaien");
@@ -2219,12 +2216,17 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 			}
 			else
 			{
+				if (_errors.find ("error") == std::string::npos)
+				{
+				ImGui::TextUnformatted (                                  "");
+				}
+
 				ImGui::TextUnformatted (                                  "Press");        ImGui::SameLine ();
 				ImGui::TextColored     ( ImColor::HSV (.23f, 1.f, 1.f),   "\'%s%s%s\'",
 				                                        _menu_key.ctrl  ? "Ctrl + "  : "",
 				                                        _menu_key.shift ? "Shift + " : "",
 				                         keyboard_keys [_menu_key.keycode] );              ImGui::SameLine ();
-				ImGui::TextUnformatted (                                  "to open the "
+				ImGui::TextUnformatted (                                  "to open ReShade's "
 				                                                          "configuration "
 				                                                          "menu." );
 
@@ -2239,6 +2241,26 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 						"Open the configuration menu and click on 'Show Log' for more details.");
 				}
 			}
+
+		ImGui::TextUnformatted (                                  "Press");                            ImGui::SameLine ();
+		ImGui::TextColored     ( ImColor::HSV (.16f, 1.f, 1.f),   "\'%s%s%s\'",
+		                                        "Ctrl + ",
+		                                        "Shift + ",
+		                                        "Backspace" );                                         ImGui::SameLine ();
+		ImGui::TextUnformatted (                                  ", ");                               ImGui::SameLine ();
+		ImGui::TextColored     ( ImColor::HSV (.16f, 1.f, 1.f),   "\'Select + Start\' (PlayStation)"); ImGui::SameLine ();
+		ImGui::TextUnformatted (                                  "or ");                              ImGui::SameLine ();
+		ImGui::TextColored     ( ImColor::HSV (.16f, 1.f, 1.f),   "\'Back + Start\' (Xbox)");          ImGui::SameLine ();
+		if (is_unx)
+		{
+		  ImGui::TextUnformatted (                                  "to open Untitled Project X's "
+		                                                          "configuration menu. ");
+		}
+		else
+		{
+		  ImGui::TextUnformatted (                                  "to open Special K's "
+		                                                          "configuration menu. ");
+		}
 
 			ImGui::End           ( );
 			ImGui::PopStyleColor (2);
@@ -2287,7 +2309,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 			{
 				ImGui::SetNextWindowPosCenter (                  ImGuiSetCond_Once);
 				ImGui::SetNextWindowSize      (ImVec2(710, 650), ImGuiSetCond_Once);
-				ImGui::Begin                  ( "ReShade 3.0.7 by crosire; modified for Special K "
+				ImGui::Begin                  ( "ReShade 3.0.8 by crosire; modified for Special K "
 				                                "by Kaldaien###ReShade_Main", &_show_menu,
 					                                   ImGuiWindowFlags_MenuBar |
 					                                   ImGuiWindowFlags_NoCollapse );
@@ -2337,4 +2359,11 @@ __stdcall
 SK_ImGui_DrawCallback (void* user)
 {
   return reinterpret_cast <reshade::runtime *> (user)->draw_callback ();
+}
+
+bool
+__stdcall
+SK_ImGui_OpenCloseCallback (void* user)
+{
+  return reinterpret_cast <reshade::runtime *> (user)->toggle_menu ();
 }

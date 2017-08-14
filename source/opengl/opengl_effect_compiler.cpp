@@ -154,7 +154,6 @@ namespace reshade::opengl
 				minfilter = GL_LINEAR_MIPMAP_NEAREST;
 				magfilter = GL_LINEAR;
 				break;
-			case reshade::texture_filter::anisotropic:
 			case reshade::texture_filter::min_mag_mip_linear:
 				minfilter = GL_LINEAR_MIPMAP_LINEAR;
 				magfilter = GL_LINEAR;

@@ -3315,10 +3315,6 @@ namespace reshadefx
 					b = (a & 0x3C) | (b & 0x03);
 					variable->properties.filter = static_cast<reshade::texture_filter>(b);
 				}
-				else if (name == "MaxAnisotropy")
-				{
-					scalar_literal_cast(value_literal, 0, variable->properties.max_anisotropy);
-				}
 				else if (name == "MinLOD" || name == "MaxMipLevel")
 				{
 					scalar_literal_cast(value_literal, 0, variable->properties.min_lod);

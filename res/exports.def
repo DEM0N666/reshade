@@ -28,8 +28,8 @@ EXPORTS
 	CreateDXGIFactory1
 	CreateDXGIFactory2
 
-	DXGIDumpJournal
-	DXGIReportAdapterConfiguration
+	;DXGIDumpJournal
+	;DXGIReportAdapterConfiguration
 	;DXGID3D10CreateDevice
 	;DXGID3D10CreateLayeredDevice
 	;DXGID3D10GetLayeredDeviceSize
@@ -403,14 +403,3 @@ EXPORTS
 	RegisterClassW = HookRegisterClassW
 	RegisterClassExA = HookRegisterClassExA
 	RegisterClassExW = HookRegisterClassExW
-
-	; ws2_32.dll
-	send = HookSend
-	sendto = HookSendTo
-	recv = HookRecv
-	recvfrom = HookRecvFrom
-	WSASend = HookWSASend
-	WSASendTo = HookWSASendTo
-	WSARecv = HookWSARecv
-	WSARecvEx = HookWSARecvEx
-	WSARecvFrom = HookWSARecvFrom

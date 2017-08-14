@@ -143,6 +143,63 @@ namespace reshade::hooks
 
 			return true;
 		}
+		bool queue(hook::address target, hook::address replacement, hook_method method)
+		{
+			LOG(INFO) << "Queueing hook for '0x" << target << "' with '0x" << replacement << "' using method " << static_cast<int>(method) << " ...";
+
+			hook hook(target, replacement);
+			hook.trampoline = target;
+
+			hook::status status = hook::status::unknown;
+
+			switch (method)
+			{
+				case hook_method::export_hook:
+				{
+					status = hook::status::success;
+					break;
+				}
+				case hook_method::function_hook:
+				{
+					status = hook.queue ();
+					break;
+				}
+				case hook_method::vtable_hook:
+				{
+					DWORD protection = PAGE_READWRITE;
+					const auto target_address = s_vtable_addresses.at(target);
+
+					if (VirtualProtect(target_address, sizeof(*target_address), protection, &protection))
+					{
+						*target_address = replacement;
+
+						VirtualProtect(target_address, sizeof(*target_address), protection, &protection);
+
+						status = hook::status::success;
+					}
+					else
+					{
+						status = hook::status::memory_protection_failure;
+					}
+					break;
+				}
+			}
+
+			if (status != hook::status::success)
+			{
+				LOG(ERROR) << "Failed to queue hook for '0x" << target << "' with status code " << static_cast<int>(status) << ".";
+
+				return false;
+			}
+
+			LOG(INFO) << "> Succeeded.";
+
+			{ const std::lock_guard<std::mutex> lock(s_mutex_hooks);
+				s_hooks.emplace_back(std::move(hook), method);
+			}
+
+			return true;
+		}
 		bool install(const HMODULE target_module, const HMODULE replacement_module, hook_method method)
 		{
 			assert(target_module != nullptr);
@@ -199,11 +256,12 @@ namespace reshade::hooks
 			// Hook matching exports
 			for (const auto &match : matches)
 			{
-				if (install(match.first, match.second, method))
+				if (queue(match.first, match.second, method))
 				{
 					install_count++;
 				}
 			}
+      apply_queued ();
 
 			return install_count != 0;
 		}
@@ -389,6 +447,25 @@ namespace reshade::hooks
 
 		return install(target, replacement, hook_method::function_hook);
 	}
+	bool queue(hook::address target, hook::address replacement)
+	{
+		assert(target != nullptr);
+		assert(replacement != nullptr);
+
+		if (target == replacement)
+		{
+			return false;
+		}
+
+		const hook hook = find(replacement);
+
+		if (hook.installed())
+		{
+			return target == hook.target;
+		}
+
+		return queue(target, replacement, hook_method::function_hook);
+	}
 	bool install(hook::address vtable[], unsigned int offset, hook::address replacement)
 	{
 		assert(vtable != nullptr);
@@ -469,6 +546,11 @@ namespace reshade::hooks
 		}
 	}
 
+  bool apply_queued (void)
+  {
+    return MH_ApplyQueued () == MH_OK;
+  }
+
 	hook::address call(hook::address replacement)
 	{
 		const hook hook = find(replacement);
@@ -499,185 +581,4 @@ namespace reshade::hooks
 
 		return nullptr;
 	}
-		bool defer(hook::address target, hook::address replacement, hook_method method)
-		{
-			LOG(INFO) << "Installing hook for '0x" << target << "' with '0x" << replacement << "' using method " << static_cast<int>(method) << " ...";
-
-			hook hook(target, replacement);
-			hook.trampoline = target;
-
-			hook::status status = hook::status::unknown;
-
-			switch (method)
-			{
-				case hook_method::export_hook:
-				{
-					status = hook::status::success;
-					break;
-				}
-				case hook_method::function_hook:
-				{
-					status = hook.install();
-					break;
-				}
-				case hook_method::vtable_hook:
-				{
-					DWORD protection = PAGE_READWRITE;
-					const auto target_address = s_vtable_addresses.at(target);
-
-					if (VirtualProtect(target_address, sizeof(*target_address), protection, &protection))
-					{
-						*target_address = replacement;
-
-						VirtualProtect(target_address, sizeof(*target_address), protection, &protection);
-
-						status = hook::status::success;
-					}
-					else
-					{
-						status = hook::status::memory_protection_failure;
-					}
-					break;
-				}
-			}
-
-			if (status != hook::status::success)
-			{
-				LOG(ERROR) << "Failed to install hook for '0x" << target << "' with status code " << static_cast<int>(status) << ".";
-
-				return false;
-			}
-
-			LOG(INFO) << "> Succeeded.";
-
-			{ const std::lock_guard<std::mutex> lock(s_mutex_hooks);
-				s_hooks.emplace_back(std::move(hook), method);
-			}
-
-			return true;
-		}
-
-
-
-		bool defer(const HMODULE target_module, const HMODULE replacement_module, hook_method method)
-		{
-			assert(target_module != nullptr);
-			assert(replacement_module != nullptr);
-
-			// Load export tables
-			const auto target_exports      = get_module_exports(target_module);
-			const auto replacement_exports = get_module_exports(replacement_module);
-
-			if (target_exports.empty())
-			{
-				LOG(INFO) << "> Empty export table! Skipped.";
-
-				return false;
-			}
-
-			size_t install_count = 0;
-			std::vector<std::pair<hook::address, hook::address>> matches;
-			matches.reserve(replacement_exports.size());
-
-			LOG(INFO) << "> Dumping matches in export table:";
-			LOG(INFO) << "  +--------------------+---------+----------------------------------------------------+";
-			LOG(INFO) << "  | Address            | Ordinal | Name                                               |";
-			LOG(INFO) << "  +--------------------+---------+----------------------------------------------------+";
-
-			// Analyze export table
-			for (const auto &symbol : target_exports)
-			{
-				if (symbol.name == nullptr || symbol.address == nullptr)
-				{
-					continue;
-				}
-
-				// Find appropriate replacement
-				const auto it = std::find_if(replacement_exports.cbegin(), replacement_exports.cend(),
-					[&symbol](const module_export &moduleexport) {
-						return std::strcmp(moduleexport.name, symbol.name) == 0;
-					});
-
-				// Filter uninteresting functions
-				if (it != replacement_exports.cend() &&
-					std::strcmp(symbol.name, "DXGIReportAdapterConfiguration") != 0 &&
-					std::strcmp(symbol.name, "DXGIDumpJournal") != 0)
-				{
-					LOG(INFO) << "  | 0x" << std::setw(16) << symbol.address << " | " << std::setw(7) << symbol.ordinal << " | " << std::setw(50) << symbol.name << " |";
-
-					matches.push_back({ symbol.address, it->address });
-				}
-			}
-
-			LOG(INFO) << "  +--------------------+---------+----------------------------------------------------+";
-			LOG(INFO) << "> Found " << matches.size() << " match(es). Installing ...";
-
-			// Hook matching exports
-			for (const auto &match : matches)
-			{
-				if (defer(match.first, match.second, method))
-				{
-					install_count++;
-				}
-			}
-
-			return install_count != 0;
-		}
-
-	bool defer(hook::address target, hook::address replacement)
-	{
-		assert(target != nullptr);
-		assert(replacement != nullptr);
-
-		if (target == replacement)
-		{
-			return false;
-		}
-
-		const hook hook = find(replacement);
-
-		if (hook.installed())
-		{
-			return target == hook.target;
-		}
-
-		return defer(target, replacement, hook_method::function_hook);
-	}
-
-	bool defer(hook::address vtable[], unsigned int offset, hook::address replacement)
-	{
-		assert(vtable != nullptr);
-		assert(replacement != nullptr);
-
-		DWORD protection = PAGE_READONLY;
-		hook::address &target = vtable[offset];
-
-		if (VirtualProtect(&target, sizeof(hook::address), protection, &protection))
-		{
-			const auto insert = s_vtable_addresses.emplace(target, &target);
-
-			VirtualProtect(&target, sizeof(hook::address), protection, &protection);
-
-			if (insert.second)
-			{
-				if (target != replacement && defer(target, replacement, hook_method::vtable_hook))
-				{
-					return true;
-				}
-
-				s_vtable_addresses.erase(insert.first);
-			}
-			else
-			{
-				return insert.first->first == target;
-			}
-		}
-
-		return false;
-	}
-  void
-  hooks::apply_queued (void)
-  {
-    MH_ApplyQueued ();
-  }
 }

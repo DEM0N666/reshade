@@ -248,7 +248,6 @@
     <ClCompile Include="source\runtime_objects.cpp" />
     <ClCompile Include="source\symbol_table.cpp" />
     <ClCompile Include="source\windows\user32.cpp" />
-    <ClCompile Include="source\windows\ws2_32.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="res\resource.h" />

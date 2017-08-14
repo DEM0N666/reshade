@@ -14,7 +14,7 @@
 SPECIALK_IMPORT   (unsigned long)
 SK_GetFramesDrawn (void);
 
-#define NO_TRANSIENT_API
+//#define NO_TRANSIENT_API
 
 #pragma region Undefine Function Names
 #undef IDirect3D9_CreateDevice
@@ -161,6 +161,12 @@ HRESULT STDMETHODCALLTYPE IDirect3D9Ex_CreateDeviceEx(IDirect3D9Ex *pD3D, UINT A
 		return hr;
 	}
 
+  if (pPresentationParameters->Flags & D3DPRESENTFLAG_VIDEO)
+  {
+    LOG(WARNING) << "> Skipping device due to swapchain used for video.";
+    return hr;
+  }
+
 	IDirect3DDevice9Ex *const device = *ppReturnedDeviceInterface;
 
 	if (use_software_rendering)
@@ -168,7 +174,7 @@ HRESULT STDMETHODCALLTYPE IDirect3D9Ex_CreateDeviceEx(IDirect3D9Ex *pD3D, UINT A
 		device->SetSoftwareVertexProcessing(TRUE);
 	}
 
-	if (DeviceType != D3DDEVTYPE_NULLREF  &&  (! SK_GetFramesDrawn ()))
+	if (DeviceType != D3DDEVTYPE_NULLREF)
 	{
 		IDirect3DSwapChain9 *swapchain = nullptr;
 		device->GetSwapChain(0, &swapchain);
