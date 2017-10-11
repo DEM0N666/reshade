@@ -9,7 +9,7 @@
 #include "lexer.hpp"
 #include "input.hpp"
 #include "resource_loading.hpp"
-#include <imgui.h>
+#include "..\deps\imgui\imgui.h"
 #include <algorithm>
 
 namespace reshade::d3d10

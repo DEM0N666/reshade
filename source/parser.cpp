@@ -64,7 +64,7 @@ namespace reshadefx
 			case lexer::tokenid::bracket_open:
 				return "[";
 			case lexer::tokenid::backslash:
-				return "\\";
+				return R"(\)";
 			case lexer::tokenid::bracket_close:
 				return "]";
 			case lexer::tokenid::caret:
@@ -250,14 +250,12 @@ namespace reshadefx
 		_symbol_table(new symbol_table())
 	{
 	}
-	parser::~parser()
-	{
-	}
+	parser::~parser() = default;
 
 	bool parser::run(const std::string &input)
 	{
-		_lexer.reset(new lexer(input));
-		_lexer_backup.reset();
+		_lexer = std::make_unique <reshadefx::lexer> (input);
+		_lexer_backup.reset ();
 
 		consume();
 
@@ -308,7 +306,7 @@ namespace reshadefx
 	void parser::backup()
 	{
 		_lexer.swap(_lexer_backup);
-		_lexer.reset(new lexer(*_lexer_backup));
+		_lexer = std::make_unique <reshadefx::lexer> (*_lexer_backup);
 		_token_backup = _token_next;
 	}
 	void parser::restore()
@@ -1088,7 +1086,7 @@ namespace reshadefx
 		}
 		else if (accept(lexer::tokenid::int_literal))
 		{
-			literal_expression_node *const literal = _ast.make_node<literal_expression_node>(location);
+			auto *const literal = _ast.make_node<literal_expression_node>(location);
 			literal->type.basetype = type_node::datatype_int;
 			literal->type.qualifiers = type_node::qualifier_const;
 			literal->type.rows = literal->type.cols = 1, literal->type.array_length = 0;
@@ -1536,7 +1534,7 @@ namespace reshadefx
 					bool constant = false;
 					signed char offsets[4] = { -1, -1, -1, -1 };
 					const unsigned int set = subscript[1] == 'm';
-					const char coefficient = static_cast<char>(!set);
+					const auto coefficient = static_cast<char>(!set);
 
 					for (size_t i = 0, j = 0; i < length; i += 3 + set, ++j)
 					{

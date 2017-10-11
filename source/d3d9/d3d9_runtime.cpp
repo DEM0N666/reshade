@@ -8,7 +8,7 @@
 #include "d3d9_effect_compiler.hpp"
 #include "lexer.hpp"
 #include "input.hpp"
-#include <imgui.h>
+#include "..\deps\imgui\imgui.h"
 #include <algorithm>
 
 const auto D3DFMT_INTZ = static_cast<D3DFORMAT>(MAKEFOURCC('I', 'N', 'T', 'Z'));

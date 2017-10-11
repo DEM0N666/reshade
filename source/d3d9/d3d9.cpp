@@ -161,11 +161,11 @@ HRESULT STDMETHODCALLTYPE IDirect3D9Ex_CreateDeviceEx(IDirect3D9Ex *pD3D, UINT A
 		return hr;
 	}
 
-  if (pPresentationParameters->Flags & D3DPRESENTFLAG_VIDEO)
-  {
-    LOG(WARNING) << "> Skipping device due to swapchain used for video.";
-    return hr;
-  }
+	if (pPresentationParameters->Flags & D3DPRESENTFLAG_VIDEO)
+	{
+		LOG(WARNING) << "> Skipping device due to swapchain used for video.";
+		return hr;
+	}
 
 	IDirect3DDevice9Ex *const device = *ppReturnedDeviceInterface;
 
@@ -274,7 +274,7 @@ HOOK_EXPORT IDirect3D9 *WINAPI Direct3DCreate9(UINT SDKVersion)
   }
 #endif
 
-	reshade::hooks::install(vtable_from_instance(res), 16, reinterpret_cast<reshade::hook::address>(&IDirect3D9_CreateDevice));
+	reshade::hooks::install(vtable_from_instance(res), 16, reinterpret_cast<reshade::hook::address>(&IDirect3D9_CreateDevice), "IDirect3D9::CreateDevice");
 
 	LOG(INFO) << "Returning 'IDirect3D9' object " << res;
 
@@ -300,8 +300,8 @@ HOOK_EXPORT HRESULT WINAPI Direct3DCreate9Ex(UINT SDKVersion, IDirect3D9Ex **ppD
   }
 #endif
 
-  reshade::hooks::install(vtable_from_instance(*ppD3D), 16, reinterpret_cast<reshade::hook::address>(&IDirect3D9_CreateDevice));
-  reshade::hooks::install(vtable_from_instance(*ppD3D), 20, reinterpret_cast<reshade::hook::address>(&IDirect3D9Ex_CreateDeviceEx));
+  reshade::hooks::install(vtable_from_instance(*ppD3D), 16, reinterpret_cast<reshade::hook::address>(&IDirect3D9_CreateDevice),     "IDirect3D9::CreateDevice");
+  reshade::hooks::install(vtable_from_instance(*ppD3D), 20, reinterpret_cast<reshade::hook::address>(&IDirect3D9Ex_CreateDeviceEx), "IDirect3D9Ex::CreateDevieEx");
 
 	LOG(INFO) << "Returning 'IDirect3D9Ex' object " << *ppD3D;
 

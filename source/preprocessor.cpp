@@ -67,7 +67,7 @@ namespace reshadefx
 		{
 			for (const auto &element : _filecache)
 			{
-				included_files.push_back(element.first);
+				included_files.emplace_back(element.first);
 			}
 
 			return true;
@@ -122,7 +122,7 @@ namespace reshadefx
 		else
 		{
 			_output_location.source = name;
-			_output += "#line 1 \"" + name + "\"\n";
+			_output += R"(#line 1 ")" + name + "\"\n";
 		}
 
 		consume();
@@ -164,7 +164,7 @@ namespace reshadefx
 			{
 				_output_location.line = 1;
 				_output_location.source = _input_stack.top()._name;
-				_output += "#line 1 \"" + _output_location.source + "\"\n";
+				_output += R"(#line 1 ")" + _output_location.source + "\"\n";
 			}
 		}
 	}
@@ -357,7 +357,7 @@ namespace reshadefx
 			if (accept(lexer::tokenid::ellipsis))
 			{
 				m.is_variadic = true;
-				m.parameters.push_back("__VA_ARGS__");
+				m.parameters.emplace_back("__VA_ARGS__");
 
 				// TODO: Implement variadic macros
 				error(current_token().location, "variadic macros are not currently supported");

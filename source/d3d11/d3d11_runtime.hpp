@@ -174,7 +174,7 @@ typedef struct D3D11_TEXTURE2D_DESC1
 struct CD3D11_TEXTURE2D_DESC1 : public D3D11_TEXTURE2D_DESC1
 {
     CD3D11_TEXTURE2D_DESC1()
-    {}
+    = default;
     explicit CD3D11_TEXTURE2D_DESC1( const D3D11_TEXTURE2D_DESC1& o ) :
         D3D11_TEXTURE2D_DESC1( o )
     {}
@@ -222,7 +222,7 @@ struct CD3D11_TEXTURE2D_DESC1 : public D3D11_TEXTURE2D_DESC1
         MiscFlags = desc.MiscFlags;
         TextureLayout = textureLayout;
     }
-    ~CD3D11_TEXTURE2D_DESC1() {}
+    ~CD3D11_TEXTURE2D_DESC1() = default;
     operator const D3D11_TEXTURE2D_DESC1&() const { return *this; }
 };
 extern "C"{
@@ -411,7 +411,7 @@ typedef struct D3D11_TEXTURE3D_DESC1
 struct CD3D11_TEXTURE3D_DESC1 : public D3D11_TEXTURE3D_DESC1
 {
     CD3D11_TEXTURE3D_DESC1()
-    {}
+    = default;
     explicit CD3D11_TEXTURE3D_DESC1( const D3D11_TEXTURE3D_DESC1& o ) :
         D3D11_TEXTURE3D_DESC1( o )
     {}
@@ -453,7 +453,7 @@ struct CD3D11_TEXTURE3D_DESC1 : public D3D11_TEXTURE3D_DESC1
         MiscFlags = desc.MiscFlags;
         TextureLayout = textureLayout;
     }
-    ~CD3D11_TEXTURE3D_DESC1() {}
+    ~CD3D11_TEXTURE3D_DESC1() = default;
     operator const D3D11_TEXTURE3D_DESC1&() const { return *this; }
 };
 extern "C"{
@@ -651,7 +651,7 @@ typedef struct D3D11_RASTERIZER_DESC2
 struct CD3D11_RASTERIZER_DESC2 : public D3D11_RASTERIZER_DESC2
 {
     CD3D11_RASTERIZER_DESC2()
-    {}
+    = default;
     explicit CD3D11_RASTERIZER_DESC2( const D3D11_RASTERIZER_DESC2& o ) :
         D3D11_RASTERIZER_DESC2( o )
     {}
@@ -697,7 +697,7 @@ struct CD3D11_RASTERIZER_DESC2 : public D3D11_RASTERIZER_DESC2
         ForcedSampleCount = forcedSampleCount;
         ConservativeRaster = conservativeRaster;
     }
-    ~CD3D11_RASTERIZER_DESC2() {}
+    ~CD3D11_RASTERIZER_DESC2() = default;
     operator const D3D11_RASTERIZER_DESC2&() const { return *this; }
 };
 extern "C"{
@@ -894,7 +894,7 @@ typedef struct D3D11_SHADER_RESOURCE_VIEW_DESC1
 struct CD3D11_SHADER_RESOURCE_VIEW_DESC1 : public D3D11_SHADER_RESOURCE_VIEW_DESC1
 {
     CD3D11_SHADER_RESOURCE_VIEW_DESC1()
-    {}
+    = default;
     explicit CD3D11_SHADER_RESOURCE_VIEW_DESC1( const D3D11_SHADER_RESOURCE_VIEW_DESC1& o ) :
         D3D11_SHADER_RESOURCE_VIEW_DESC1( o )
     {}
@@ -1096,7 +1096,7 @@ struct CD3D11_SHADER_RESOURCE_VIEW_DESC1 : public D3D11_SHADER_RESOURCE_VIEW_DES
         Texture3D.MostDetailedMip = mostDetailedMip;
         Texture3D.MipLevels = mipLevels;
     }
-    ~CD3D11_SHADER_RESOURCE_VIEW_DESC1() {}
+    ~CD3D11_SHADER_RESOURCE_VIEW_DESC1() = default;
     operator const D3D11_SHADER_RESOURCE_VIEW_DESC1&() const { return *this; }
 };
 extern "C"{
@@ -1288,7 +1288,7 @@ typedef struct D3D11_RENDER_TARGET_VIEW_DESC1
 struct CD3D11_RENDER_TARGET_VIEW_DESC1 : public D3D11_RENDER_TARGET_VIEW_DESC1
 {
     CD3D11_RENDER_TARGET_VIEW_DESC1()
-    {}
+    = default;
     explicit CD3D11_RENDER_TARGET_VIEW_DESC1( const D3D11_RENDER_TARGET_VIEW_DESC1& o ) :
         D3D11_RENDER_TARGET_VIEW_DESC1( o )
     {}
@@ -1444,7 +1444,7 @@ struct CD3D11_RENDER_TARGET_VIEW_DESC1 : public D3D11_RENDER_TARGET_VIEW_DESC1
         Texture3D.FirstWSlice = firstWSlice;
         Texture3D.WSize = wSize;
     }
-    ~CD3D11_RENDER_TARGET_VIEW_DESC1() {}
+    ~CD3D11_RENDER_TARGET_VIEW_DESC1() = default;
     operator const D3D11_RENDER_TARGET_VIEW_DESC1&() const { return *this; }
 };
 extern "C"{
@@ -1634,7 +1634,7 @@ typedef struct D3D11_UNORDERED_ACCESS_VIEW_DESC1
 struct CD3D11_UNORDERED_ACCESS_VIEW_DESC1 : public D3D11_UNORDERED_ACCESS_VIEW_DESC1
 {
     CD3D11_UNORDERED_ACCESS_VIEW_DESC1()
-    {}
+    = default;
     explicit CD3D11_UNORDERED_ACCESS_VIEW_DESC1( const D3D11_UNORDERED_ACCESS_VIEW_DESC1& o ) :
         D3D11_UNORDERED_ACCESS_VIEW_DESC1( o )
     {}
@@ -1780,7 +1780,7 @@ struct CD3D11_UNORDERED_ACCESS_VIEW_DESC1 : public D3D11_UNORDERED_ACCESS_VIEW_D
         Texture3D.FirstWSlice = firstWSlice;
         Texture3D.WSize = wSize;
     }
-    ~CD3D11_UNORDERED_ACCESS_VIEW_DESC1() {}
+    ~CD3D11_UNORDERED_ACCESS_VIEW_DESC1() = default;
     operator const D3D11_UNORDERED_ACCESS_VIEW_DESC1&() const { return *this; }
 };
 extern "C"{
@@ -1947,8 +1947,7 @@ typedef struct D3D11_QUERY_DESC1
 }
 struct CD3D11_QUERY_DESC1 : public D3D11_QUERY_DESC1
 {
-    CD3D11_QUERY_DESC1()
-    {}
+    CD3D11_QUERY_DESC1() = default;
     explicit CD3D11_QUERY_DESC1( const D3D11_QUERY_DESC1& o ) :
         D3D11_QUERY_DESC1( o )
     {}
@@ -1961,7 +1960,7 @@ struct CD3D11_QUERY_DESC1 : public D3D11_QUERY_DESC1
         MiscFlags = miscFlags;
         ContextType = contextType;
     }
-    ~CD3D11_QUERY_DESC1() {}
+    ~CD3D11_QUERY_DESC1() = default;
     operator const D3D11_QUERY_DESC1&() const { return *this; }
 };
 extern "C"{
@@ -4823,7 +4822,32 @@ extern RPC_IF_HANDLE __MIDL_itf_d3d11_3_0000_0009_v0_0_s_ifspec;
 
 
 
-#include <mutex>
+class hybrid_spinlock
+{
+public:
+  hybrid_spinlock (int spin_count = 3000)
+  {
+    InitializeCriticalSectionAndSpinCount (&_cs, spin_count);
+  }
+
+  ~hybrid_spinlock (void)
+  {
+    DeleteCriticalSection (&_cs);
+  }
+
+  void lock (void) {
+    EnterCriticalSection (&_cs);
+  }
+
+  void unlock (void)
+  {
+    LeaveCriticalSection (&_cs);
+  }
+
+protected:
+  CRITICAL_SECTION  _cs;
+};
+
 #include "runtime.hpp"
 #include "d3d11_stateblock.hpp"
 
@@ -4888,7 +4912,8 @@ namespace reshade::d3d11
 		struct depth_source_info
 		{
 			UINT width, height;
-			UINT drawcall_count, vertices_count;
+			UINT drawcall_count,
+			     vertices_count;
 		};
 
 		bool init_backbuffer_texture();
@@ -4911,7 +4936,7 @@ namespace reshade::d3d11
 		com_ptr<ID3D11VertexShader> _copy_vertex_shader;
 		com_ptr<ID3D11PixelShader> _copy_pixel_shader;
 		com_ptr<ID3D11SamplerState> _copy_sampler;
-		std::mutex _mutex;
+		hybrid_spinlock _mutex;
 		com_ptr<ID3D11RasterizerState> _effect_rasterizer_state;
 
 		com_ptr<ID3D11Buffer> _imgui_vertex_buffer, _imgui_index_buffer;

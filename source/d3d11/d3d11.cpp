@@ -28,7 +28,9 @@ HOOK_EXPORT HRESULT WINAPI D3D11CreateDeviceAndSwapChain(IDXGIAdapter *pAdapter,
 
 	D3D_FEATURE_LEVEL FeatureLevel = D3D_FEATURE_LEVEL_11_0;
 
-	HRESULT hr = reshade::hooks::call(&D3D11CreateDeviceAndSwapChain)(pAdapter, DriverType, Software, Flags, pFeatureLevels, FeatureLevels, SDKVersion, nullptr, nullptr, ppDevice, &FeatureLevel, nullptr);
+  ID3D11DeviceContext* pRetCtx = nullptr;
+
+	HRESULT hr = reshade::hooks::call(&D3D11CreateDeviceAndSwapChain)(pAdapter, DriverType, Software, Flags, pFeatureLevels, FeatureLevels, SDKVersion, nullptr, nullptr, ppDevice, &FeatureLevel, &pRetCtx);
 
 	if (FAILED(hr))
 	{
@@ -48,7 +50,8 @@ HOOK_EXPORT HRESULT WINAPI D3D11CreateDeviceAndSwapChain(IDXGIAdapter *pAdapter,
 		assert(device != nullptr);
 
 		device->QueryInterface(&dxgidevice);
-		device->GetImmediateContext(&devicecontext);
+    devicecontext = pRetCtx;
+		//device->GetImmediateContext(&devicecontext);
 
 		assert(dxgidevice != nullptr);
 		assert(devicecontext != nullptr);

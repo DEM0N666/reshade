@@ -2365,10 +2365,10 @@ namespace reshade::opengl
 
 		glLinkProgram(pass.program);
 
-		for (unsigned int i = 0; i < 2; i++)
+		for (unsigned int shader : shaders)
 		{
-			glDetachShader(pass.program, shaders[i]);
-			glDeleteShader(shaders[i]);
+			glDetachShader(pass.program, shader);
+			glDeleteShader(shader);
 		}
 
 		GLint status = GL_FALSE;
@@ -2638,7 +2638,7 @@ namespace reshade::opengl
 		GLint status = GL_FALSE;
 		const std::string source_str = source.str();
 		const GLchar *src = source_str.c_str();
-		const GLsizei len = static_cast<GLsizei>(source_str.size());
+		const auto len = static_cast<GLsizei>(source_str.size());
 
 		glShaderSource(shader, 1, &src, &len);
 		glCompileShader(shader);

@@ -300,14 +300,29 @@ void STDMETHODCALLTYPE D3D11DeviceContext::SOSetTargets(UINT NumBuffers, ID3D11B
 }
 void STDMETHODCALLTYPE D3D11DeviceContext::DrawAuto()
 {
+	for (auto runtime : _device->_runtimes)
+	{
+		runtime->on_draw_call(_orig, 0);
+	}
+
 	_orig->DrawAuto();
 }
 void STDMETHODCALLTYPE D3D11DeviceContext::DrawIndexedInstancedIndirect(ID3D11Buffer *pBufferForArgs, UINT AlignedByteOffsetForArgs)
 {
+	for (auto runtime : _device->_runtimes)
+	{
+		runtime->on_draw_call (_orig, 0);
+	}
+
 	_orig->DrawIndexedInstancedIndirect(pBufferForArgs, AlignedByteOffsetForArgs);
 }
 void STDMETHODCALLTYPE D3D11DeviceContext::DrawInstancedIndirect(ID3D11Buffer *pBufferForArgs, UINT AlignedByteOffsetForArgs)
 {
+	for (auto runtime : _device->_runtimes)
+	{
+		runtime->on_draw_call (_orig, 0);
+	}
+
 	_orig->DrawInstancedIndirect(pBufferForArgs, AlignedByteOffsetForArgs);
 }
 void STDMETHODCALLTYPE D3D11DeviceContext::Dispatch(UINT ThreadGroupCountX, UINT ThreadGroupCountY, UINT ThreadGroupCountZ)

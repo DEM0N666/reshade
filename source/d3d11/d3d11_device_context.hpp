@@ -12,19 +12,23 @@ struct D3D11DeviceContext : ID3D11DeviceContext3
 	D3D11DeviceContext(D3D11Device *device, ID3D11DeviceContext  *original) :
 		_orig(original),
 		_interface_version(0),
-		_device(device) { }
+		_device(device),
+		_type(original->GetType ()) { }
 	D3D11DeviceContext(D3D11Device *device, ID3D11DeviceContext1 *original) :
 		_orig(original),
 		_interface_version(1),
-		_device(device) { }
+		_device(device),
+		_type(original->GetType ()) { }
 	D3D11DeviceContext(D3D11Device *device, ID3D11DeviceContext2 *original) :
 		_orig(original),
 		_interface_version(2),
-		_device(device) { }
+		_device(device),
+		_type(original->GetType ()) { }
 	D3D11DeviceContext(D3D11Device *device, ID3D11DeviceContext3 *original) :
 		_orig(original),
 		_interface_version(3),
-		_device(device) { }
+		_device(device),
+		_type(original->GetType ()) { }
 
 	D3D11DeviceContext(const D3D11DeviceContext &) = delete;
 	D3D11DeviceContext &operator=(const D3D11DeviceContext &) = delete;
@@ -193,4 +197,5 @@ struct D3D11DeviceContext : ID3D11DeviceContext3
 	ID3D11DeviceContext *_orig;
 	unsigned int _interface_version;
 	D3D11Device *const _device;
+	D3D11_DEVICE_CONTEXT_TYPE _type;
 };

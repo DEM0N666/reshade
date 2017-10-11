@@ -7,7 +7,7 @@
 #include "opengl_runtime.hpp"
 #include "opengl_effect_compiler.hpp"
 #include "input.hpp"
-#include <imgui.h>
+#include "..\deps\imgui\imgui.h"
 #include <assert.h>
 
 IMGUI_API
@@ -727,10 +727,10 @@ namespace reshade::opengl
 		GLuint best_match = 0;
 		depth_source_info best_info = { 0, 0, 0, GL_NONE };
 
-		for (auto it = _depth_source_table.begin(); it != _depth_source_table.end(); ++it)
+		for (auto& it : _depth_source_table)
 		{
-			const auto depthstencil = it->first;
-			auto &depthstencil_info = it->second;
+			const auto depthstencil = it.first;
+			auto &depthstencil_info = it.second;
 
 			if (depthstencil_info.drawcall_count == 0)
 			{

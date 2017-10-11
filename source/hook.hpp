@@ -5,11 +5,13 @@
 
 #pragma once
 
+#include <string>
+
 namespace reshade
 {
 	struct hook
 	{
-		typedef void *address;
+		using address = void *;
 		enum class status
 		{
 			unknown = -1,
@@ -68,6 +70,7 @@ namespace reshade
 			return reinterpret_cast<T>(call());
 		}
 
-		address target, replacement, trampoline;
+		address     target, replacement, trampoline;
+		std::string name;
 	};
 }

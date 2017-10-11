@@ -16,7 +16,7 @@ namespace reshadefx
 		syntax_tree &operator=(const syntax_tree &) = delete;
 
 	public:
-		syntax_tree() { }
+		syntax_tree() = default;
 
 		template <typename T>
 		T *make_node(const location &location)

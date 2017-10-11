@@ -1589,14 +1589,14 @@ namespace reshade::d3d9
 		const char shader_types[2][3] = { "vs", "ps" };
 		const function_declaration_node *shader_functions[2] = { node->vertex_shader, node->pixel_shader };
 
-		for (unsigned int i = 0; i < 2; i++)
+		for (auto& shader_function : shader_functions)
 		{
-			if (shader_functions[i] == nullptr)
+			if (shader_function == nullptr)
 			{
 				continue;
 			}
 
-			for (auto sampler : _functions.at(shader_functions[i]).sampler_dependencies)
+			for (auto sampler : _functions.at(shader_function).sampler_dependencies)
 			{
 				pass.samplers[pass.sampler_count] = _samplers.at(sampler->name);
 				const auto *const texture = sampler->properties.texture;

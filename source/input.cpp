@@ -12,7 +12,7 @@
 #include <mutex>
 #include <unordered_map>
 
-#include "imgui.h"
+#include "..\deps\imgui\imgui.h"
 
 namespace reshade
 {

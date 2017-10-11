@@ -325,6 +325,14 @@ void STDMETHODCALLTYPE D3D11Device::GetImmediateContext(ID3D11DeviceContext **pp
 		return;
 	}
 
+  _orig->GetImmediateContext (ppImmediateContext);
+
+  if (*ppImmediateContext != _immediate_context->_orig)
+  {
+    LOG(INFO) << "Improperly hooked immediate context fixed for" << this << ".";
+    _immediate_context = new D3D11DeviceContext (this, *ppImmediateContext);
+  }
+
 	assert(_immediate_context != nullptr);
 
 	_immediate_context->AddRef();

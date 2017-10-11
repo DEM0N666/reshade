@@ -14,7 +14,7 @@ namespace reshade
 	class variant
 	{
 	public:
-		variant() { }
+		variant() = default;
 		variant(const char *value) : _values(1, value) { }
 		template <typename T>
 		variant(const T &value) : variant(std::to_string(value)) { }

@@ -16,8 +16,8 @@
 #include <stb_image_write.h>
 #include <stb_image_resize.h>
 #define IMGUI_DEFINE_MATH_OPERATORS
-#include <imgui.h>
-#include <imgui_internal.h>
+#include "..\deps\imgui\imgui.h"
+#include "..\deps\imgui\imgui_internal.h"
 
 
 #if 0
@@ -1600,9 +1600,9 @@ namespace reshade
 			ImGui::Text       ("%X",               std::hash<std::string>()(s_target_executable_path.filename_without_extension().string()));
 			ImGui::Text       ("%d-%d-%d %d",      _date[0], _date[1], _date[2], _date[3]);
 			ImGui::Text       ("%X %d",            _vendor_id, _device_id);
-			ImGui::Text       ("%.2f",             ImGui::GetIO().Framerate);
+			ImGui::Text       ("%.2f",             ImGui::GetIO ().Framerate);
 			ImGui::Text       ("%f ms",            (post_processing_time * 1e-6f));
-			ImGui::Text       ("%u (%u vertices)", _drawcalls, _vertices);
+			ImGui::Text       ("%u (%u vertices)", _drawcalls.load (), _vertices.load ());
 			ImGui::Text       ("%f ms",            _last_frame_duration.count () * 1e-6f);
 			ImGui::Text       ("%f ms",            std::fmod(std::chrono::duration_cast<std::chrono::nanoseconds>(_last_present_time - _start_time).count() * 1e-6f, 16777216.0f));
 

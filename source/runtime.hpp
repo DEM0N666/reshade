@@ -6,6 +6,7 @@
 #pragma once
 
 #include <chrono>
+#include <atomic>
 #include "filesystem.hpp"
 #include "runtime_objects.hpp"
 
@@ -188,7 +189,8 @@ namespace reshade
 		unsigned int _width = 0, _height = 0;
 		unsigned int _vendor_id = 0, _device_id = 0;
 		uint64_t _framecount = 0;
-		unsigned int _drawcalls = 0, _vertices = 0;
+		std::atomic <unsigned int> _drawcalls = 0,
+		                           _vertices  = 0;
 		std::shared_ptr<input> _input;
 		ImGuiContext *_imgui_context = nullptr;
 		std::unique_ptr<ImFontAtlas> _imgui_font_atlas;

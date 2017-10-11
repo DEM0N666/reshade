@@ -53,7 +53,6 @@
     <Import Project="deps\MinHook.props" />
     <Import Project="deps\gl3w.props" />
     <Import Project="deps\stb.props" />
-    <Import Project="deps\ImGui.props" />
   </ImportGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -142,6 +141,7 @@
       <DataExecutionPrevention>false</DataExecutionPrevention>
       <CreateHotPatchableImage>ItaniumImage</CreateHotPatchableImage>
       <FullProgramDatabaseFile>true</FullProgramDatabaseFile>
+      <AdditionalDependencies>SpecialK32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderModel>4.0</ShaderModel>
@@ -181,6 +181,7 @@
       <LargeAddressAware>true</LargeAddressAware>
       <DataExecutionPrevention>false</DataExecutionPrevention>
       <FullProgramDatabaseFile>true</FullProgramDatabaseFile>
+      <AdditionalDependencies>SpecialK64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderModel>4.0</ShaderModel>
@@ -196,9 +197,6 @@
   <ItemGroup>
     <ProjectReference Include="deps\gl3w.vcxproj">
       <Project>{09c0d610-9b82-40d8-b37e-0d26e3bff77f}</Project>
-    </ProjectReference>
-    <ProjectReference Include="deps\ImGui.vcxproj">
-      <Project>{9a62233b-0b70-4b48-91e8-35aa666bc32e}</Project>
     </ProjectReference>
     <ProjectReference Include="deps\MinHook.vcxproj">
       <Project>{783fedfb-5124-4f8c-87bc-70aa8490266b}</Project>

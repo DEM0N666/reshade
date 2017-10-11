@@ -28,12 +28,12 @@ EXPORTS
 	CreateDXGIFactory1
 	CreateDXGIFactory2
 
-	;DXGIDumpJournal
-	;DXGIReportAdapterConfiguration
-	;DXGID3D10CreateDevice
-	;DXGID3D10CreateLayeredDevice
-	;DXGID3D10GetLayeredDeviceSize
-	;DXGID3D10RegisterLayers
+	DXGIDumpJournal
+	DXGIReportAdapterConfiguration
+	DXGID3D10CreateDevice
+	DXGID3D10CreateLayeredDevice
+	DXGID3D10GetLayeredDeviceSize
+	DXGID3D10RegisterLayers
 
 	; opengl32.dll
 	glAccum

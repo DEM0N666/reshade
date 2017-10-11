@@ -21,7 +21,7 @@ namespace reshade::filesystem
 	class path
 	{
 	public:
-		path() { }
+		path() = default;
 		path(const char *data) : _data(data) { }
 		path(std::string data) : _data(std::move(data)) { }
 

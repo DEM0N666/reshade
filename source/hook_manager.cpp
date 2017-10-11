@@ -72,7 +72,7 @@ namespace reshade::hooks
 			{
 				module_export symbol;
 				symbol.ordinal = reinterpret_cast<const WORD *>(imagebase + exportdir->AddressOfNameOrdinals)[i] + exportbase;
-				symbol.name = reinterpret_cast<const char *>(imagebase + reinterpret_cast<const DWORD *>(imagebase + exportdir->AddressOfNames)[i]);
+				symbol.name    = reinterpret_cast<const char *>(imagebase + reinterpret_cast<const DWORD *>(imagebase + exportdir->AddressOfNames)[i]);
 				symbol.address = const_cast<void *>(reinterpret_cast<const void *>(imagebase + reinterpret_cast<const DWORD *>(imagebase + exportdir->AddressOfFunctions)[symbol.ordinal - exportbase]));
 
 				exports.push_back(std::move(symbol));
@@ -86,9 +86,9 @@ namespace reshade::hooks
 		std::vector<filesystem::path> s_delayed_hook_paths; std::mutex s_mutex_delayed_hook_paths;
 		std::unordered_map<hook::address, hook::address *> s_vtable_addresses; std::mutex s_mutex_vtable_addresses;
 
-		bool install(hook::address target, hook::address replacement, hook_method method)
+		bool install(hook::address target, hook::address replacement, hook_method method, std::string name)
 		{
-			LOG(INFO) << "Installing hook for '0x" << target << "' with '0x" << replacement << "' using method " << static_cast<int>(method) << " ...";
+			LOG(INFO) << "Installing hook for '" << name << " with '0x" << replacement << "' using method " << static_cast<int>(method) << " ...";
 
 			hook hook(target, replacement);
 			hook.trampoline = target;
@@ -130,7 +130,7 @@ namespace reshade::hooks
 
 			if (status != hook::status::success)
 			{
-				LOG(ERROR) << "Failed to install hook for '0x" << target << "' with status code " << static_cast<int>(status) << ".";
+				LOG(ERROR) << "Failed to install hook for '" << name << "' with status code " << static_cast<int>(status) << ".";
 
 				return false;
 			}
@@ -138,16 +138,17 @@ namespace reshade::hooks
 			LOG(INFO) << "> Succeeded.";
 
 			{ const std::lock_guard<std::mutex> lock(s_mutex_hooks);
+				hook.name = name;
 				s_hooks.emplace_back(std::move(hook), method);
 			}
 
 			return true;
 		}
-		bool queue(hook::address target, hook::address replacement, hook_method method)
+		bool queue(hook::address target, hook::address replacement, hook_method method, std::string name)
 		{
-			LOG(INFO) << "Queueing hook for '0x" << target << "' with '0x" << replacement << "' using method " << static_cast<int>(method) << " ...";
+			LOG(INFO) << "Queueing hook for '" << name << " with '0x" << replacement << "' using method " << static_cast<int>(method) << " ...";
 
-			hook hook(target, replacement);
+			hook hook (target, replacement);
 			hook.trampoline = target;
 
 			hook::status status = hook::status::unknown;
@@ -187,12 +188,13 @@ namespace reshade::hooks
 
 			if (status != hook::status::success)
 			{
-				LOG(ERROR) << "Failed to queue hook for '0x" << target << "' with status code " << static_cast<int>(status) << ".";
+				LOG(ERROR) << "Failed to queue hook for '" << name << "' with status code " << static_cast<int>(status) << ".";
 
 				return false;
 			}
 
 			LOG(INFO) << "> Succeeded.";
+			hook.name = name;
 
 			{ const std::lock_guard<std::mutex> lock(s_mutex_hooks);
 				s_hooks.emplace_back(std::move(hook), method);
@@ -217,7 +219,14 @@ namespace reshade::hooks
 			}
 
 			size_t install_count = 0;
-			std::vector<std::pair<hook::address, hook::address>> matches;
+
+      struct hook_record_s {
+        std::string   name;
+        hook::address target;
+        hook::address replacement;
+      };
+
+			std::vector <hook_record_s> matches;
 			matches.reserve(replacement_exports.size());
 
 			LOG(INFO) << "> Dumping matches in export table:";
@@ -246,7 +255,7 @@ namespace reshade::hooks
 				{
 					LOG(INFO) << "  | 0x" << std::setw(16) << symbol.address << " | " << std::setw(7) << symbol.ordinal << " | " << std::setw(50) << symbol.name << " |";
 
-					matches.push_back({ symbol.address, it->address });
+					matches.push_back({ symbol.name, symbol.address, it->address });
 				}
 			}
 
@@ -256,7 +265,7 @@ namespace reshade::hooks
 			// Hook matching exports
 			for (const auto &match : matches)
 			{
-				if (queue(match.first, match.second, method))
+				if (queue(match.target, match.replacement, method, match.name))
 				{
 					install_count++;
 				}
@@ -267,7 +276,7 @@ namespace reshade::hooks
 		}
 		bool uninstall(hook &hook, hook_method method)
 		{
-			LOG(INFO) << "Uninstalling hook for '0x" << hook.target << "' ...";
+			LOG(INFO) << "Uninstalling hook for '0x" << hook.name << "' ...";
 
 			if (hook.uninstalled())
 			{
@@ -315,7 +324,7 @@ namespace reshade::hooks
 
 			if (status != hook::status::success)
 			{
-				LOG(WARNING) << "Failed to uninstall hook for '0x" << hook.target << "' with status code " << static_cast<int>(status) << ".";
+				LOG(WARNING) << "Failed to uninstall hook for '" << hook.name << "' with status code " << static_cast<int>(status) << ".";
 
 				return false;
 			}
@@ -363,7 +372,7 @@ namespace reshade::hooks
 						return false;
 					}
 
-					LOG(INFO) << "Installing delayed hooks for " << path << " (Just loaded via 'LoadLibraryA(\"" << lpFileName << "\")') ...";
+					LOG(INFO) << "Installing delayed hooks for " << path << R"( (Just loaded via 'LoadLibraryA(")" << lpFileName << R"(")') ...)";
 
 					return install(delayed_handle, g_module_handle, hook_method::function_hook);
 				});
@@ -405,7 +414,7 @@ namespace reshade::hooks
 						return false;
 					}
 
-					LOG(INFO) << "Installing delayed hooks for " << path << " (Just loaded via 'LoadLibraryW(\"" << lpFileName << "\")') ...";
+					LOG(INFO) << "Installing delayed hooks for " << path << R"( (Just loaded via 'LoadLibraryW(")" << lpFileName << R"(")') ...)";
 
 					return install(delayed_handle, g_module_handle, hook_method::function_hook);
 				});
@@ -428,7 +437,7 @@ namespace reshade::hooks
 		}
 	}
 
-	bool install(hook::address target, hook::address replacement)
+	bool install(hook::address target, hook::address replacement, std::string name)
 	{
 		assert(target != nullptr);
 		assert(replacement != nullptr);
@@ -445,28 +454,28 @@ namespace reshade::hooks
 			return target == hook.target;
 		}
 
-		return install(target, replacement, hook_method::function_hook);
+		return install(target, replacement, hook_method::function_hook, name);
 	}
-	bool queue(hook::address target, hook::address replacement)
+	bool queue(hook::address target, hook::address replacement, std::string name)
 	{
-		assert(target != nullptr);
-		assert(replacement != nullptr);
+		assert (target      != nullptr);
+		assert (replacement != nullptr);
 
 		if (target == replacement)
 		{
 			return false;
 		}
 
-		const hook hook = find(replacement);
+		const hook hook = find (replacement);
 
-		if (hook.installed())
+		if (hook.installed ())
 		{
 			return target == hook.target;
 		}
 
-		return queue(target, replacement, hook_method::function_hook);
+		return queue (target, replacement, hook_method::function_hook, name);
 	}
-	bool install(hook::address vtable[], unsigned int offset, hook::address replacement)
+	bool install(hook::address vtable[], unsigned int offset, hook::address replacement, std::string name)
 	{
 		assert(vtable != nullptr);
 		assert(replacement != nullptr);
@@ -482,7 +491,7 @@ namespace reshade::hooks
 
 			if (insert.second)
 			{
-				if (target != replacement && install(target, replacement, hook_method::vtable_hook))
+				if (target != replacement && install(target, replacement, hook_method::vtable_hook, name))
 				{
 					return true;
 				}
@@ -511,14 +520,14 @@ namespace reshade::hooks
 	}
 	void register_module(const filesystem::path &target_path)
 	{
-		install(reinterpret_cast<hook::address>(&LoadLibraryA), reinterpret_cast<hook::address>(&HookLoadLibraryA));
-		install(reinterpret_cast<hook::address>(&LoadLibraryExA), reinterpret_cast<hook::address>(&HookLoadLibraryExA));
-		install(reinterpret_cast<hook::address>(&LoadLibraryW), reinterpret_cast<hook::address>(&HookLoadLibraryW));
-		install(reinterpret_cast<hook::address>(&LoadLibraryExW), reinterpret_cast<hook::address>(&HookLoadLibraryExW));
+		queue(reinterpret_cast<hook::address>(&LoadLibraryA),   reinterpret_cast<hook::address>(&HookLoadLibraryA),   "LoadLibraryA");
+		queue(reinterpret_cast<hook::address>(&LoadLibraryExA), reinterpret_cast<hook::address>(&HookLoadLibraryExA), "LoadLibraryExA");
+		queue(reinterpret_cast<hook::address>(&LoadLibraryW),   reinterpret_cast<hook::address>(&HookLoadLibraryW),   "LoadLibraryW");
+		queue(reinterpret_cast<hook::address>(&LoadLibraryExW), reinterpret_cast<hook::address>(&HookLoadLibraryExW), "LoadLibraryExW");
 
 		LOG(INFO) << "Registering hooks for " << target_path << " ...";
 
-		const auto target_filename = target_path.filename_without_extension();
+		const auto target_filename      = target_path.filename_without_extension();
 		const auto replacement_filename = filesystem::get_module_path(g_module_handle).filename_without_extension();
 
 		if (target_filename == replacement_filename)
