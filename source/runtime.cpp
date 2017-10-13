@@ -426,7 +426,8 @@ namespace reshade
 				{
 					technique.enabled  = false;
 					technique.timeleft = 0;
-					technique.average_duration.clear ();
+					technique.average_cpu_duration.clear ();
+					technique.average_gpu_duration.clear ();
 				}
 			}
 
@@ -445,7 +446,8 @@ namespace reshade
 
 			if (! technique.enabled)
 			{
-				technique.average_duration.clear ();
+				technique.average_cpu_duration.clear ();
+				technique.average_gpu_duration.clear ();
 				continue;
 			}
 
@@ -457,7 +459,7 @@ namespace reshade
 			const auto time_technique_finished = std::chrono::high_resolution_clock::now ();
 
 
-			technique.average_duration.append (
+			technique.average_cpu_duration.append (
 				std::chrono::duration_cast <std::chrono::nanoseconds> ( time_technique_finished -
 				                                                        time_technique_started ).count ()
 				);
@@ -1577,8 +1579,13 @@ namespace reshade
 			ImGui::PopItemWidth ();
 
 			uint64_t post_processing_time = 0;
+      float    gpu_time             = 0.0f;
+
 			for (const auto &technique : _techniques)
-				post_processing_time += technique.average_duration;
+      {
+				post_processing_time += technique.average_cpu_duration;
+        gpu_time             += technique.average_gpu_duration;
+      }
 
       ImGui::PushStyleColor  (ImGuiCol_Text, ImColor (1.f, 1.f, 1.f, 1.f));
 			ImGui::BeginGroup      (                              );
@@ -1587,6 +1594,8 @@ namespace reshade
 			ImGui::TextUnformatted ("Device:"                     );
 			ImGui::TextUnformatted ("FPS:"                        );
 			ImGui::TextUnformatted ("Post-Processing:"            );
+if (gpu_time != 0.0f)
+			ImGui::TextUnformatted ("GPU Runtime:");
 			ImGui::TextUnformatted ("Draw Calls:"                 );
 			ImGui::Text            ("Frame %llu:", _framecount + 1);
 			ImGui::TextUnformatted ("Timer:"                      );
@@ -1602,6 +1611,8 @@ namespace reshade
 			ImGui::Text       ("%X %d",            _vendor_id, _device_id);
 			ImGui::Text       ("%.2f",             ImGui::GetIO ().Framerate);
 			ImGui::Text       ("%f ms",            (post_processing_time * 1e-6f));
+if (gpu_time != 0.0f)
+			ImGui::Text       ("%f ms",            gpu_time);
 			ImGui::Text       ("%u (%u vertices)", _drawcalls.load (), _vertices.load ());
 			ImGui::Text       ("%f ms",            _last_frame_duration.count () * 1e-6f);
 			ImGui::Text       ("%f ms",            std::fmod(std::chrono::duration_cast<std::chrono::nanoseconds>(_last_present_time - _start_time).count() * 1e-6f, 16777216.0f));
@@ -1701,8 +1712,13 @@ namespace reshade
 
 			for ( const auto& technique : _techniques )
 			{
-				if (technique.enabled)
-					ImGui::TextColored     (ImColor (1.f, 1.f, 1.f, 1.f),       "%f ms", (technique.average_duration * 1e-6f));
+        if (technique.enabled)
+        {
+          if (technique.average_gpu_duration != 0.0f)
+            ImGui::TextColored (ImColor (1.f, 1.f, 1.f, 1.f), "%f ms (gpu) / (%f cpu)", technique.average_gpu_duration, ( technique.average_cpu_duration * 1e-6f ));
+          else
+            ImGui::TextColored (ImColor (1.f, 1.f, 1.f, 1.f), "%f ms (cpu)", ( technique.average_cpu_duration * 1e-6f ));
+        }
 				else
 					ImGui::TextUnformatted (" ");
 			}

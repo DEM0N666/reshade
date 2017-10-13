@@ -4848,6 +4848,9 @@ protected:
   CRITICAL_SECTION  _cs;
 };
 
+#include <concurrent_vector.h>
+#include <concurrent_unordered_map.h>
+
 #include "runtime.hpp"
 #include "d3d11_stateblock.hpp"
 
@@ -4914,40 +4917,28 @@ namespace reshade::d3d11
 			UINT width, height;
 			UINT drawcall_count,
 			     vertices_count;
+			BOOL invalidated;    // For concurrency, we cannot remove elements; we will recycle them.
 		};
 
 		bool init_backbuffer_texture();
 		bool init_default_depth_stencil();
 		bool init_fx_resources();
-		bool init_imgui_resources();
-		bool init_imgui_font_atlas();
 
 		void detect_depth_source();
 		bool create_depthstencil_replacement(ID3D11DepthStencilView *depthstencil);
 
-		bool _is_multisampling_enabled = false;
-		DXGI_FORMAT _backbuffer_format = DXGI_FORMAT_UNKNOWN;
-		d3d11_stateblock _stateblock;
-		com_ptr<ID3D11Texture2D> _backbuffer, _backbuffer_resolved;
-		com_ptr<ID3D11DepthStencilView> _depthstencil, _depthstencil_replacement;
-		com_ptr<ID3D11Texture2D> _depthstencil_texture;
+		bool                            _is_multisampling_enabled = false;
+		DXGI_FORMAT                     _backbuffer_format        = DXGI_FORMAT_UNKNOWN;
+		d3d11_stateblock                _stateblock;
+		com_ptr<ID3D11Texture2D>        _backbuffer, _backbuffer_resolved;
+		com_ptr<ID3D11Texture2D>        _depthstencil_texture;
 		com_ptr<ID3D11DepthStencilView> _default_depthstencil;
-		std::unordered_map<ID3D11DepthStencilView *, depth_source_info> _depth_source_table;
-		com_ptr<ID3D11VertexShader> _copy_vertex_shader;
-		com_ptr<ID3D11PixelShader> _copy_pixel_shader;
-		com_ptr<ID3D11SamplerState> _copy_sampler;
-		hybrid_spinlock _mutex;
-		com_ptr<ID3D11RasterizerState> _effect_rasterizer_state;
-
-		com_ptr<ID3D11Buffer> _imgui_vertex_buffer, _imgui_index_buffer;
-		com_ptr<ID3D11VertexShader> _imgui_vertex_shader;
-		com_ptr<ID3D11PixelShader> _imgui_pixel_shader;
-		com_ptr<ID3D11InputLayout> _imgui_input_layout;
-		com_ptr<ID3D11Buffer> _imgui_constant_buffer;
-		com_ptr<ID3D11SamplerState> _imgui_texture_sampler;
-		com_ptr<ID3D11RasterizerState> _imgui_rasterizer_state;
-		com_ptr<ID3D11BlendState> _imgui_blend_state;
-		com_ptr<ID3D11DepthStencilState> _imgui_depthstencil_state;
-		int _imgui_vertex_buffer_size = 0, _imgui_index_buffer_size = 0;
+		com_ptr <ID3D11DepthStencilView>                    _depthstencil, _depthstencil_replacement;
+		concurrency::concurrent_unordered_map <         ID3D11DepthStencilView *, depth_source_info> _depth_source_table;
+		com_ptr<ID3D11VertexShader>     _copy_vertex_shader;
+		com_ptr<ID3D11PixelShader>      _copy_pixel_shader;
+		com_ptr<ID3D11SamplerState>     _copy_sampler;
+		hybrid_spinlock                 _mutex;
+		com_ptr<ID3D11RasterizerState>  _effect_rasterizer_state;
 	};
 }

@@ -12,6 +12,8 @@
 #include "variant.hpp"
 #include "moving_average.hpp"
 
+#include <d3d11.h>
+
 namespace reshade
 {
 	enum class texture_filter
@@ -116,6 +118,33 @@ namespace reshade
 		std::unordered_map<std::string, variant> annotations;
 		bool hidden = false;
 	};
+	struct disjoint_timer_query final
+	{
+		volatile ID3D11Query* async  = nullptr;
+		volatile int32_t      active = false;
+
+		D3D11_QUERY_DATA_TIMESTAMP_DISJOINT last_results = { };
+	};
+	struct timer_query final
+	{
+		volatile ID3D11Query* async  = nullptr;
+		volatile int32_t      active = false;
+
+		uint64_t last_results = { };
+	};
+	struct duration
+	{
+		timer_query start, end;
+	};
+	struct gpu_interval_timer
+	{
+		uint64_t               runtime_ticks   = 0ULL;
+		double                 runtime_ms      = 0.0;
+		double                 last_runtime_ms = 0.0;
+		duration               timer;
+		disjoint_timer_query   disjoint_query;
+		bool                   disjoint_done   = false;
+	};
 	struct technique final
 	{
 		#pragma region Constructors and Assignment Operators
@@ -133,7 +162,9 @@ namespace reshade
 		bool enabled = false, hidden = false;
 		int timeout = 0, timeleft = 0, toggle_key = 0;
 		bool toggle_key_ctrl = false, toggle_key_shift = false, toggle_key_alt = false;
-		moving_average<uint64_t, 60> average_duration;
+		moving_average<uint64_t, 60> average_cpu_duration;
+		moving_average<float, 60> average_gpu_duration;
+		gpu_interval_timer timer;
 		ptrdiff_t uniform_storage_offset = 0, uniform_storage_index = -1;
 	};
 }

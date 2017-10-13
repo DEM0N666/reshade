@@ -327,10 +327,20 @@ void STDMETHODCALLTYPE D3D11DeviceContext::DrawInstancedIndirect(ID3D11Buffer *p
 }
 void STDMETHODCALLTYPE D3D11DeviceContext::Dispatch(UINT ThreadGroupCountX, UINT ThreadGroupCountY, UINT ThreadGroupCountZ)
 {
+	//for (auto runtime : _device->_runtimes)
+	//{
+	//	runtime->on_draw_call (_orig, 0);
+	//}
+
 	_orig->Dispatch(ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ);
 }
 void STDMETHODCALLTYPE D3D11DeviceContext::DispatchIndirect(ID3D11Buffer *pBufferForArgs, UINT AlignedByteOffsetForArgs)
 {
+	//for (auto runtime : _device->_runtimes)
+	//{
+	//	runtime->on_draw_call (_orig, 0);
+	//}
+
 	_orig->DispatchIndirect(pBufferForArgs, AlignedByteOffsetForArgs);
 }
 void STDMETHODCALLTYPE D3D11DeviceContext::RSSetState(ID3D11RasterizerState *pRasterizerState)
