@@ -4935,7 +4935,7 @@ namespace reshade::d3d11
 		com_ptr<ID3D11DepthStencilView> _default_depthstencil;
 		com_ptr <ID3D11DepthStencilView>                    _depthstencil, _depthstencil_replacement;
 		concurrency::concurrent_unordered_map <         ID3D11DepthStencilView *, depth_source_info> _depth_source_table;
-		com_ptr<ID3D11VertexShader>     _copy_vertex_shader;
+    com_ptr<ID3D11VertexShader>     _copy_vertex_shader;
 		com_ptr<ID3D11PixelShader>      _copy_pixel_shader;
 		com_ptr<ID3D11SamplerState>     _copy_sampler;
 		hybrid_spinlock                 _mutex;

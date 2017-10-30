@@ -9,83 +9,83 @@
 #include <assert.h>
 #include <Windows.h>
 
-HOOK_EXPORT ATOM WINAPI HookRegisterClassA(const WNDCLASSA *lpWndClass)
-{
-	assert(lpWndClass != nullptr);
-
-	auto wndclass = *lpWndClass;
-
-	if (wndclass.hInstance == GetModuleHandle(nullptr))
-	{
-		LOG(INFO) << "Redirecting '" << "RegisterClassA" << "(" << lpWndClass << ")' ...";
-
-		if ((wndclass.style & CS_OWNDC) == 0)
-		{
-			LOG(INFO) << "> Adding 'CS_OWNDC' window class style flag to '" << wndclass.lpszClassName << "'.";
-
-			wndclass.style |= CS_OWNDC;
-		}
-	}
-
-	return reshade::hooks::call(&HookRegisterClassA)(&wndclass);
-}
-HOOK_EXPORT ATOM WINAPI HookRegisterClassW(const WNDCLASSW *lpWndClass)
-{
-	assert(lpWndClass != nullptr);
-
-	auto wndclass = *lpWndClass;
-
-	if (wndclass.hInstance == GetModuleHandle(nullptr))
-	{
-		LOG(INFO) << "Redirecting '" << "RegisterClassW" << "(" << lpWndClass << ")' ...";
-
-		if ((wndclass.style & CS_OWNDC) == 0)
-		{
-			LOG(INFO) << "> Adding 'CS_OWNDC' window class style flag to '" << wndclass.lpszClassName << "'.";
-
-			wndclass.style |= CS_OWNDC;
-		}
-	}
-
-	return reshade::hooks::call(&HookRegisterClassW)(&wndclass);
-}
-HOOK_EXPORT ATOM WINAPI HookRegisterClassExA(const WNDCLASSEXA *lpWndClassEx)
-{
-	assert(lpWndClassEx != nullptr);
-
-	auto wndclass = *lpWndClassEx;
-
-	if (wndclass.hInstance == GetModuleHandle(nullptr))
-	{
-		LOG(INFO) << "Redirecting '" << "RegisterClassExA" << "(" << lpWndClassEx << ")' ...";
-
-		if ((wndclass.style & CS_OWNDC) == 0)
-		{
-			LOG(INFO) << "> Adding 'CS_OWNDC' window class style flag to '" << wndclass.lpszClassName << "'.";
-
-			wndclass.style |= CS_OWNDC;
-		}
-	}
-
-	return reshade::hooks::call(&HookRegisterClassExA)(&wndclass);
-}
-HOOK_EXPORT ATOM WINAPI HookRegisterClassExW(const WNDCLASSEXW *lpWndClassEx)
-{
-	assert(lpWndClassEx != nullptr);
-
-	auto wndclass = *lpWndClassEx;
-
-	if (wndclass.hInstance == GetModuleHandle(nullptr))
-	{
-		LOG(INFO) << "Redirecting '" << "RegisterClassExW" << "(" << lpWndClassEx << ")' ...";
-
-		if ((wndclass.style & CS_OWNDC) == 0)
-		{
-			LOG(INFO) << "> Adding 'CS_OWNDC' window class style flag to '" << wndclass.lpszClassName << "'.";
-
-			wndclass.style |= CS_OWNDC;
-		}
-	}
-
-	return reshade::hooks::call(&HookRegisterClassExW)(&wndclass);
-}
+//HOOK_EXPORT ATOM WINAPI HookRegisterClassA(const WNDCLASSA *lpWndClass)
+//{
+//	assert(lpWndClass != nullptr);
+//
+//	auto wndclass = *lpWndClass;
+//
+//	if (wndclass.hInstance == GetModuleHandle(nullptr))
+//	{
+//		LOG(INFO) << "Redirecting '" << "RegisterClassA" << "(" << lpWndClass << ")' ...";
+//
+//		if ((wndclass.style & CS_OWNDC) == 0)
+//		{
+//			LOG(INFO) << "> Adding 'CS_OWNDC' window class style flag to '" << wndclass.lpszClassName << "'.";
+//
+//			wndclass.style |= CS_OWNDC;
+//		}
+//	}
+//
+//	return reshade::hooks::call(&HookRegisterClassA)(&wndclass);
+//}
+//HOOK_EXPORT ATOM WINAPI HookRegisterClassW(const WNDCLASSW *lpWndClass)
+//{
+//	assert(lpWndClass != nullptr);
+//
+//	auto wndclass = *lpWndClass;
+//
+//	if (wndclass.hInstance == GetModuleHandle(nullptr))
+//	{
+//		LOG(INFO) << "Redirecting '" << "RegisterClassW" << "(" << lpWndClass << ")' ...";
+//
+//		if ((wndclass.style & CS_OWNDC) == 0)
+//		{
+//			LOG(INFO) << "> Adding 'CS_OWNDC' window class style flag to '" << wndclass.lpszClassName << "'.";
+//
+//			wndclass.style |= CS_OWNDC;
+//		}
+//	}
+//
+//	return reshade::hooks::call(&HookRegisterClassW)(&wndclass);
+//}
+//HOOK_EXPORT ATOM WINAPI HookRegisterClassExA(const WNDCLASSEXA *lpWndClassEx)
+//{
+//	assert(lpWndClassEx != nullptr);
+//
+//	auto wndclass = *lpWndClassEx;
+//
+//	if (wndclass.hInstance == GetModuleHandle(nullptr))
+//	{
+//		LOG(INFO) << "Redirecting '" << "RegisterClassExA" << "(" << lpWndClassEx << ")' ...";
+//
+//		if ((wndclass.style & CS_OWNDC) == 0)
+//		{
+//			LOG(INFO) << "> Adding 'CS_OWNDC' window class style flag to '" << wndclass.lpszClassName << "'.";
+//
+//			wndclass.style |= CS_OWNDC;
+//		}
+//	}
+//
+//	return reshade::hooks::call(&HookRegisterClassExA)(&wndclass);
+//}
+//HOOK_EXPORT ATOM WINAPI HookRegisterClassExW(const WNDCLASSEXW *lpWndClassEx)
+//{
+//	assert(lpWndClassEx != nullptr);
+//
+//	auto wndclass = *lpWndClassEx;
+//
+//	if (wndclass.hInstance == GetModuleHandle(nullptr))
+//	{
+//		LOG(INFO) << "Redirecting '" << "RegisterClassExW" << "(" << lpWndClassEx << ")' ...";
+//
+//		if ((wndclass.style & CS_OWNDC) == 0)
+//		{
+//			LOG(INFO) << "> Adding 'CS_OWNDC' window class style flag to '" << wndclass.lpszClassName << "'.";
+//
+//			wndclass.style |= CS_OWNDC;
+//		}
+//	}
+//
+//	return reshade::hooks::call(&HookRegisterClassExW)(&wndclass);
+//}

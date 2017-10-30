@@ -93,6 +93,9 @@ HRESULT STDMETHODCALLTYPE D3D11Device::QueryInterface(REFIID riid, void **ppvObj
 		}
 		#pragma endregion
 
+    _orig->AddRef ();
+    InterlockedExchange (&_ref, _orig->Release ());
+
 		AddRef();
 
 		*ppvObj = this;
@@ -116,7 +119,7 @@ HRESULT STDMETHODCALLTYPE D3D11Device::QueryInterface(REFIID riid, void **ppvObj
 }
 ULONG STDMETHODCALLTYPE D3D11Device::AddRef()
 {
-	_ref++;
+	InterlockedIncrement (&_ref);
 
 	assert(_dxgi_device != nullptr);
 	assert(_immediate_context != nullptr);
@@ -136,7 +139,7 @@ ULONG STDMETHODCALLTYPE D3D11Device::Release()
 
 	ULONG ref = _orig->Release();
 
-	if (--_ref == 0 && ref != 0)
+	if (InterlockedDecrement (&_ref) == 0 && ref != 0)
 	{
 		LOG(WARNING) << "Reference count for 'ID3D11Device" << (_interface_version > 0 ? std::to_string(_interface_version) : "") << "' object " << this << " is inconsistent: " << ref << ", but expected 0.";
 
@@ -145,7 +148,7 @@ ULONG STDMETHODCALLTYPE D3D11Device::Release()
 
 	if (ref == 0)
 	{
-		assert(_ref <= 0);
+		assert(ReadAcqure (&_ref) <= 0);
 
 		LOG(INFO) << "Destroyed 'ID3D11Device" << (_interface_version > 0 ? std::to_string(_interface_version) : "") << "' object " << this << ".";
 

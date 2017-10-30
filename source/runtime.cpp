@@ -20,16 +20,6 @@
 #include "..\deps\imgui\imgui_internal.h"
 
 
-#if 0
-#pragma comment (lib, "F:\\SteamLibrary\\steamapps\\common\\FINAL FANTASY FFX&FFX-2 HD Remaster\\dxgi.lib")
-#else
-#ifdef _WIN64
-#pragma comment (lib, "SpecialK64.lib")
-#else
-#pragma comment (lib, "SpecialK32.lib")
-#endif
-#endif
-
 #define SPECIALK_IMPORT(ret) \
   __declspec (dllimport) ##ret __stdcall
 
@@ -158,45 +148,9 @@ namespace reshade
 
 		// Advance various statistics
 		_framecount++;
-		_drawcalls           = _vertices = 0;
-		_last_frame_duration = std::chrono::high_resolution_clock::now () - _last_present_time;
-		_last_present_time  += _last_frame_duration;
-
-		// Create and save screenshot if associated shortcut is down
-		if (! _screenshot_key_setting_active &&
-			    ImGui::GetIO ().KeysDownDuration [_screenshot_key.keycode] == 0.0f                 &&
-          ImGui::GetIO ().KeyCtrl                                    == _screenshot_key.ctrl &&
-          ImGui::GetIO ().KeyShift                                   == _screenshot_key.shift )
-		{
-			save_screenshot ();
-		}
-
-		// Update and compile next effect queued for reloading
-		if (_reload_remaining_effects != 0 && _framecount > 1)
-		{
-			load_effect (_effect_files [_effect_files.size () - _reload_remaining_effects]);
-
-			_last_reload_time = std::chrono::high_resolution_clock::now ();
-			_reload_remaining_effects--;
-
-			if (_reload_remaining_effects == 0)
-			{
-				load_textures ();
-
-				if (_current_preset >= 0)
-				{
-					load_preset (_preset_files [_current_preset]);
-				}
-
-				if (strcmp (_effect_filter_buffer, "Search") != 0)
-				{
-					filter_techniques (_effect_filter_buffer);
-				}
-			}
-		}
 	}
 
-	void runtime::on_present_effect ()
+	int runtime::on_present_effect ()
 	{
 		ImGuiIO& io =
 			ImGui::GetIO ();
@@ -210,7 +164,7 @@ namespace reshade
 
 		if (! _effects_enabled)
 		{
-			return;
+			return 0;
 		}
 
 		// Update all uniform variables
@@ -412,6 +366,8 @@ namespace reshade
 			}
 		}
 
+		int techniques_drawn = 0;
+
 		// Render all enabled techniques
 		for ( auto& technique : _techniques )
 		{
@@ -455,6 +411,7 @@ namespace reshade
 			const auto time_technique_started  = std::chrono::high_resolution_clock::now ();
 
 			render_technique (technique);
+			++techniques_drawn;
 
 			const auto time_technique_finished = std::chrono::high_resolution_clock::now ();
 
@@ -464,6 +421,8 @@ namespace reshade
 				                                                        time_technique_started ).count ()
 				);
 		}
+
+		return techniques_drawn;
 	}
 
 	void runtime::reload ()
@@ -2149,6 +2108,46 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 	uint32_t
 	runtime::draw_callback (void)
 	{
+    auto AdvanceFrame = [&](void)
+    {
+		  _drawcalls           = _vertices = 0;
+		  _last_frame_duration = std::chrono::high_resolution_clock::now () - _last_present_time;
+		  _last_present_time  += _last_frame_duration;
+
+		  // Create and save screenshot if associated shortcut is down
+		  if (! _screenshot_key_setting_active &&
+		  	    ImGui::GetIO ().KeysDownDuration [_screenshot_key.keycode] == 0.0f                 &&
+            ImGui::GetIO ().KeyCtrl                                    == _screenshot_key.ctrl &&
+            ImGui::GetIO ().KeyShift                                   == _screenshot_key.shift )
+		  {
+		  	save_screenshot ();
+		  }
+
+		  // Update and compile next effect queued for reloading
+		  if (_reload_remaining_effects != 0 && _framecount > 1)
+		  {
+		  	load_effect (_effect_files [_effect_files.size () - _reload_remaining_effects]);
+
+		  	_last_reload_time = std::chrono::high_resolution_clock::now ();
+		  	_reload_remaining_effects--;
+
+		  	if (_reload_remaining_effects == 0)
+		  	{
+		  		load_textures ();
+
+		  		if (_current_preset >= 0)
+		  		{
+		  			load_preset (_preset_files [_current_preset]);
+		  		}
+
+		  		if (strcmp (_effect_filter_buffer, "Search") != 0)
+		  		{
+		  			filter_techniques (_effect_filter_buffer);
+		  		}
+		  	}
+		  }
+    };
+
 		auto& imgui_io =
 			ImGui::GetIO ();
 
@@ -2362,8 +2361,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 			}
 
 			if (_show_error_log || _show_menu)
+      {
+        AdvanceFrame ();
 			  return 0x1;
+      }
 		}
+
+    AdvanceFrame ();
 
 		return 0x0;
   }

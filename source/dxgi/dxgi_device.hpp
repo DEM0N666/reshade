@@ -7,16 +7,22 @@
 
 #include "dxgi.hpp"
 
-struct DXGIDevice : IDXGIDevice3
+struct DXGIDevice : IDXGIDevice4
 {
 	DXGIDevice(IDXGIDevice1 *original, D3D10Device *direct3d_device) :
 		_orig(original),
 		_interface_version(1),
-		_direct3d_device(direct3d_device) { }
+		_direct3d_device(direct3d_device) {
+    _orig->AddRef (), 
+    InterlockedExchange (&_ref, _orig->Release ()); 
+  }
 	DXGIDevice(IDXGIDevice1 *original, D3D11Device *direct3d_device) :
 		_orig(original),
 		_interface_version(1),
-		_direct3d_device(direct3d_device) { }
+		_direct3d_device(direct3d_device)  {
+    _orig->AddRef (), 
+    InterlockedExchange (&_ref, _orig->Release ()); 
+  }
 
 	DXGIDevice(const DXGIDevice &) = delete;
 	DXGIDevice &operator=(const DXGIDevice &) = delete;
@@ -51,8 +57,12 @@ struct DXGIDevice : IDXGIDevice3
 	#pragma region IDXGIDevice3
 	virtual void STDMETHODCALLTYPE Trim() override;
 	#pragma endregion
+	#pragma region IDXGIDevice4
+	virtual HRESULT STDMETHODCALLTYPE OfferResources1(UINT NumResources, IDXGIResource *const *ppResources, DXGI_OFFER_RESOURCE_PRIORITY Priority, UINT Flags) override;
+	virtual HRESULT STDMETHODCALLTYPE ReclaimResources1(UINT NumResources, IDXGIResource *const *ppResources, DXGI_RECLAIM_RESOURCE_RESULTS *pResults) override;
+	#pragma endregion
 
-	LONG _ref = 1;
+	volatile LONG _ref = 1;
 	IDXGIDevice1 *_orig;
 	unsigned int _interface_version;
 	IUnknown *const _direct3d_device;

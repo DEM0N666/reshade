@@ -78,6 +78,9 @@ HRESULT STDMETHODCALLTYPE D3D11DeviceContext::QueryInterface(REFIID riid, void *
 		}
 #pragma endregion
 
+    _orig->AddRef ();
+    InterlockedExchange (&_ref, _orig->Release ());
+
 		AddRef();
 
 		*ppvObj = this;
@@ -89,7 +92,7 @@ HRESULT STDMETHODCALLTYPE D3D11DeviceContext::QueryInterface(REFIID riid, void *
 }
 ULONG STDMETHODCALLTYPE D3D11DeviceContext::AddRef()
 {
-	_ref++;
+	InterlockedIncrement (&_ref);
 
 	return _orig->AddRef();
 }
@@ -97,16 +100,16 @@ ULONG STDMETHODCALLTYPE D3D11DeviceContext::Release()
 {
 	ULONG ref = _orig->Release();
 
-	if (--_ref == 0 && ref != 0)
+	if (InterlockedDecrement (&_ref) == 0 && ref != 0)
 	{
 		LOG(WARNING) << "Reference count for 'ID3D11DeviceContext" << (_interface_version > 0 ? std::to_string(_interface_version) : "") << "' object " << this << " is inconsistent: " << ref << ", but expected 0.";
 
 		ref = 0;
 	}
 
-	if (ref == 0)
+	if (ReadAcquire (&_ref) == 0)
 	{
-		assert(_ref <= 0);
+		assert(ReadAcquire (&_ref) <= 0);
 
 		LOG(INFO) << "Destroyed 'ID3D11DeviceContext" << (_interface_version > 0 ? std::to_string(_interface_version) : "") << "' object " << this << ".";
 
@@ -160,19 +163,19 @@ void STDMETHODCALLTYPE D3D11DeviceContext::VSSetShader(ID3D11VertexShader *pVert
 }
 void STDMETHODCALLTYPE D3D11DeviceContext::DrawIndexed(UINT IndexCount, UINT StartIndexLocation, INT BaseVertexLocation)
 {
-	for (auto runtime : _device->_runtimes)
-	{
-		runtime->on_draw_call(_orig, IndexCount);
-	}
+	//for (auto runtime : _device->_runtimes)
+	//{
+	//	runtime->on_draw_call(_orig, IndexCount);
+	//}
 
 	_orig->DrawIndexed(IndexCount, StartIndexLocation, BaseVertexLocation);
 }
 void STDMETHODCALLTYPE D3D11DeviceContext::Draw(UINT VertexCount, UINT StartVertexLocation)
 {
-	for (auto runtime : _device->_runtimes)
-	{
-		runtime->on_draw_call(_orig, VertexCount);
-	}
+	//for (auto runtime : _device->_runtimes)
+	//{
+	//	runtime->on_draw_call(_orig, VertexCount);
+	//}
 
 	_orig->Draw(VertexCount, StartVertexLocation);
 }
@@ -202,19 +205,19 @@ void STDMETHODCALLTYPE D3D11DeviceContext::IASetIndexBuffer(ID3D11Buffer *pIndex
 }
 void STDMETHODCALLTYPE D3D11DeviceContext::DrawIndexedInstanced(UINT IndexCountPerInstance, UINT InstanceCount, UINT StartIndexLocation, INT BaseVertexLocation, UINT StartInstanceLocation)
 {
-	for (auto runtime : _device->_runtimes)
-	{
-		runtime->on_draw_call(_orig, IndexCountPerInstance * InstanceCount);
-	}
+	//for (auto runtime : _device->_runtimes)
+	//{
+	//	runtime->on_draw_call(_orig, IndexCountPerInstance * InstanceCount);
+	//}
 
 	_orig->DrawIndexedInstanced(IndexCountPerInstance, InstanceCount, StartIndexLocation, BaseVertexLocation, StartInstanceLocation);
 }
 void STDMETHODCALLTYPE D3D11DeviceContext::DrawInstanced(UINT VertexCountPerInstance, UINT InstanceCount, UINT StartVertexLocation, UINT StartInstanceLocation)
 {
-	for (auto runtime : _device->_runtimes)
-	{
-		runtime->on_draw_call(_orig, VertexCountPerInstance * InstanceCount);
-	}
+	//for (auto runtime : _device->_runtimes)
+	//{
+	//	runtime->on_draw_call(_orig, VertexCountPerInstance * InstanceCount);
+	//}
 
 	_orig->DrawInstanced(VertexCountPerInstance, InstanceCount, StartVertexLocation, StartInstanceLocation);
 }
@@ -300,28 +303,28 @@ void STDMETHODCALLTYPE D3D11DeviceContext::SOSetTargets(UINT NumBuffers, ID3D11B
 }
 void STDMETHODCALLTYPE D3D11DeviceContext::DrawAuto()
 {
-	for (auto runtime : _device->_runtimes)
-	{
-		runtime->on_draw_call(_orig, 0);
-	}
+	//for (auto runtime : _device->_runtimes)
+	//{
+	//	runtime->on_draw_call(_orig, 0);
+	//}
 
 	_orig->DrawAuto();
 }
 void STDMETHODCALLTYPE D3D11DeviceContext::DrawIndexedInstancedIndirect(ID3D11Buffer *pBufferForArgs, UINT AlignedByteOffsetForArgs)
 {
-	for (auto runtime : _device->_runtimes)
-	{
-		runtime->on_draw_call (_orig, 0);
-	}
+	//for (auto runtime : _device->_runtimes)
+	//{
+	//	runtime->on_draw_call (_orig, 0);
+	//}
 
 	_orig->DrawIndexedInstancedIndirect(pBufferForArgs, AlignedByteOffsetForArgs);
 }
 void STDMETHODCALLTYPE D3D11DeviceContext::DrawInstancedIndirect(ID3D11Buffer *pBufferForArgs, UINT AlignedByteOffsetForArgs)
 {
-	for (auto runtime : _device->_runtimes)
-	{
-		runtime->on_draw_call (_orig, 0);
-	}
+	//for (auto runtime : _device->_runtimes)
+	//{
+	//	runtime->on_draw_call (_orig, 0);
+	//}
 
 	_orig->DrawInstancedIndirect(pBufferForArgs, AlignedByteOffsetForArgs);
 }

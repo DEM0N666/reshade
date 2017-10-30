@@ -21,7 +21,8 @@ HRESULT STDMETHODCALLTYPE DXGIDevice::QueryInterface(REFIID riid, void **ppvObj)
 		riid == __uuidof(IDXGIDevice) ||
 		riid == __uuidof(IDXGIDevice1) ||
 		riid == __uuidof(IDXGIDevice2) ||
-		riid == __uuidof(IDXGIDevice3))
+		riid == __uuidof(IDXGIDevice3) ||
+		riid == __uuidof(IDXGIDevice4))
 	{
 		#pragma region Update to IDXGIDevice2 interface
 		if (riid == __uuidof(IDXGIDevice2) && _interface_version < 2)
@@ -59,6 +60,27 @@ HRESULT STDMETHODCALLTYPE DXGIDevice::QueryInterface(REFIID riid, void **ppvObj)
 			_interface_version = 3;
 		}
 		#pragma endregion
+		#pragma region Update to IDXGIDevice4 interface
+		if (riid == __uuidof(IDXGIDevice4) && _interface_version < 4)
+		{
+			IDXGIDevice4 *device4 = nullptr;
+
+			if (FAILED(_orig->QueryInterface(&device4)))
+			{
+				return E_NOINTERFACE;
+			}
+
+			_orig->Release();
+
+			LOG(INFO) << "Upgraded 'IDXGIDevice" << (_interface_version > 0 ? std::to_string(_interface_version) : "") << "' object " << this << " to 'IDXGIDevice4'.";
+
+			_orig = device4;
+			_interface_version = 4;
+		}
+		#pragma endregion
+
+    _orig->AddRef ();
+    InterlockedExchange (&_ref, _orig->Release ());
 
 		AddRef();
 
@@ -71,7 +93,7 @@ HRESULT STDMETHODCALLTYPE DXGIDevice::QueryInterface(REFIID riid, void **ppvObj)
 }
 ULONG STDMETHODCALLTYPE DXGIDevice::AddRef()
 {
-	_ref++;
+	InterlockedIncrement (&_ref);
 
 	return _orig->AddRef();
 }
@@ -79,7 +101,7 @@ ULONG STDMETHODCALLTYPE DXGIDevice::Release()
 {
 	ULONG ref = _orig->Release();
 
-	if (--_ref == 0 && ref != 1)
+	if (InterlockedDecrement (&_ref) == 0 && ref != 1)
 	{
 		LOG(WARNING) << "Reference count for 'IDXGIDevice" << (_interface_version > 0 ? std::to_string(_interface_version) : "") << "' object " << this << " is inconsistent: " << ref << ", but expected 1.";
 
@@ -88,7 +110,7 @@ ULONG STDMETHODCALLTYPE DXGIDevice::Release()
 
 	if (ref == 1)
 	{
-		assert(_ref <= 0);
+		assert(ReadAcquire (&_ref) <= 0);
 
 		LOG(INFO) << "Destroyed 'IDXGIDevice" << (_interface_version > 0 ? std::to_string(_interface_version) : "") << "' object " << this << ".";
 
@@ -170,4 +192,19 @@ void STDMETHODCALLTYPE DXGIDevice::Trim()
 	assert(_interface_version >= 3);
 
 	return static_cast<IDXGIDevice3 *>(_orig)->Trim();
+}
+
+// IDXGIDevice4
+HRESULT STDMETHODCALLTYPE DXGIDevice::OfferResources1 (UINT NumResources, IDXGIResource *const *ppResources, DXGI_OFFER_RESOURCE_PRIORITY Priority, UINT Flags)
+{
+	assert(_interface_version >= 4);
+
+	return static_cast<IDXGIDevice4 *>(_orig)->OfferResources1 (NumResources, ppResources, Priority, Flags);
+}
+
+HRESULT STDMETHODCALLTYPE DXGIDevice::ReclaimResources1 (UINT NumResources, IDXGIResource *const *ppResources, DXGI_RECLAIM_RESOURCE_RESULTS *pResults)
+{
+	assert(_interface_version >= 4);
+
+	return static_cast<IDXGIDevice4 *>(_orig)->ReclaimResources1 (NumResources, ppResources, pResults);
 }

@@ -2874,6 +2874,7 @@ HOOK_EXPORT int WINAPI wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR
 
 	return format;
 }
+
 BOOL WINAPI wglChoosePixelFormatARB(HDC hdc, const int *piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats)
 {
 	LOG(INFO) << "Redirecting '" << "wglChoosePixelFormatARB" << "(" << hdc << ", " << piAttribIList << ", " << pfAttribFList << ", " << nMaxFormats << ", " << piFormats << ", " << nNumFormats << ")' ...";
@@ -3457,12 +3458,13 @@ HOOK_EXPORT BOOL WINAPI wglMakeCurrent(HDC hdc, HGLRC hglrc)
     return trampoline (hdc, hglrc);
   }
 
-	LOG(INFO) << "Redirecting '" << "wglMakeCurrent" << "(" << hdc << ", " << hglrc << ")' ...";
-
-	const HDC hdc_previous = wglGetCurrentDC();
+	const HDC   hdc_previous   = wglGetCurrentDC();
 	const HGLRC hglrc_previous = wglGetCurrentContext();
 
-	if (hdc == hdc_previous && hglrc == hglrc_previous)
+  if (hdc !=0 && hglrc != 0 && hdc != hdc_previous && hglrc != hglrc_previous)
+	LOG(INFO) << "Redirecting '" << "wglMakeCurrent" << "(" << hdc << ", " << hglrc << ")' ...";
+
+	if (hdc == hdc_previous && hglrc == hglrc_previous || (hdc == 0 || hglrc == 0))
 	{
 		return TRUE;
 	}

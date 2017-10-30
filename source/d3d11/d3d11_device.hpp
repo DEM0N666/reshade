@@ -11,16 +11,28 @@ struct D3D11Device : ID3D11Device3
 {
 	explicit D3D11Device(ID3D11Device  *original) :
 		_orig(original),
-		_interface_version(0) { }
+		_interface_version(0) {
+    _orig->AddRef (), 
+    InterlockedExchange (&_ref, _orig->Release ()); 
+  }
 	explicit D3D11Device(ID3D11Device1 *original) :
 		_orig(original),
-		_interface_version(1) { }
+		_interface_version(1) {
+    _orig->AddRef (), 
+    InterlockedExchange (&_ref, _orig->Release ()); 
+  }
 	explicit D3D11Device(ID3D11Device2 *original) :
 		_orig(original),
-		_interface_version(2) { }
+		_interface_version(2) {
+    _orig->AddRef (), 
+    InterlockedExchange (&_ref, _orig->Release ()); 
+  }
 	explicit D3D11Device(ID3D11Device3 *original) :
 		_orig(original),
-		_interface_version(3) { }
+		_interface_version(3) { 
+    _orig->AddRef (), 
+    InterlockedExchange (&_ref, _orig->Release ()); 
+  }
 
 	D3D11Device(const D3D11Device &) = delete;
 	D3D11Device &operator=(const D3D11Device &) = delete;
@@ -101,7 +113,7 @@ struct D3D11Device : ID3D11Device3
 	virtual void STDMETHODCALLTYPE ReadFromSubresource(void *pDstData, UINT DstRowPitch, UINT DstDepthPitch, ID3D11Resource *pSrcResource, UINT SrcSubresource, const D3D11_BOX *pSrcBox) override;
 	#pragma endregion
 
-	LONG _ref = 1;
+	volatile LONG _ref = 1;
 	ID3D11Device *_orig;
 	unsigned int _interface_version;
 	struct DXGIDevice *_dxgi_device = nullptr;

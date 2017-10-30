@@ -148,8 +148,9 @@ namespace reshade
 		void on_present();
 		/// <summary>
 		/// Callback function called to apply the post-processing effects to the screen.
+		/// <returns>Returns number of techniques drawn.</returns>
 		/// </summary>
-		void on_present_effect();
+		int on_present_effect();
 
 		/// <summary>
 		/// Compile effect from the specified source file and initialize textures, constants and techniques.

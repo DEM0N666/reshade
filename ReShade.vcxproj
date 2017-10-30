@@ -9,12 +9,36 @@
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="dxgi|Win32">
+      <Configuration>dxgi</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="dxgi|x64">
+      <Configuration>dxgi</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="FAR|Win32">
+      <Configuration>FAR</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="FAR|x64">
+      <Configuration>FAR</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release|x64">
       <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="UnX|Win32">
+      <Configuration>UnX</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="UnX|x64">
+      <Configuration>UnX</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
@@ -25,23 +49,38 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
-    <OutDir>C:\Users\andon\Documents\My Mods\SpecialK\PlugIns\Unofficial\ReShade</OutDir>
+    <OutDir>C:\users\andon\documents\My Mods\SpecialK\PlugIns\Unofficial\ReShade\</OutDir>
     <IntDir>$(SolutionDir)intermediate\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Platform)'=='Win32'">
-    <TargetName>ReShade32</TargetName>
+    <TargetName>ReShade32_SpecialK32</TargetName>
   </PropertyGroup>
-  <PropertyGroup Label="Configuration" Condition="'$(Platform)'=='x64'">
-    <TargetName>ReShade64</TargetName>
+  <PropertyGroup Condition="'$(Platform)'=='x64'" Label="Configuration">
+    <TargetName>ReShade64_SpecialK64</TargetName>
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)'=='Debug'">
     <UseDebugLibraries>true</UseDebugLibraries>
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)'=='Release'">
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <LinkIncremental>false</LinkIncremental>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='dxgi'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <LinkIncremental>false</LinkIncremental>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='FAR'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <LinkIncremental>false</LinkIncremental>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='UnX'" Label="Configuration">
     <UseDebugLibraries>false</UseDebugLibraries>
     <LinkIncremental>false</LinkIncremental>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -54,6 +93,18 @@
     <Import Project="deps\gl3w.props" />
     <Import Project="deps\stb.props" />
   </ImportGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <TargetExt>.dll</TargetExt>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='dxgi|x64'">
+    <TargetExt>_dxgi.dll</TargetExt>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <TargetExt>.dll</TargetExt>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='dxgi|Win32'">
+    <TargetExt>_dxgi.dll</TargetExt>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
@@ -89,7 +140,7 @@
       <SDLCheck>true</SDLCheck>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>$(SolutionDir)res;$(SolutionDir)source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN64;WIN32_LEAN_AND_MEAN;NOMINMAX;_GDI32_;WINSOCK_API_LINKAGE=;_DEBUG;%(PreprocessorDefinitions);IMGUI_DISABLE_OBSOLETE_FUNCTIONS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;WIN32_LEAN_AND_MEAN;NOMINMAX;_GDI32_;WINSOCK_API_LINKAGE=;_DEBUG;%(PreprocessorDefinitions);IMGUI_DISABLE_OBSOLETE_FUNCTIONS</PreprocessorDefinitions>
       <DisableSpecificWarnings>4351;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -106,7 +157,7 @@
       <ObjectFileOutput>$(SolutionDir)res\%(Filename).cso</ObjectFileOutput>
     </FxCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>WIN64;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
     <PreBuildEvent>
       <Command>tools\verbuild res\version.h -c</Command>
@@ -135,13 +186,139 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(SolutionDir)\bin\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories);C:\Users\andon\Documents\My Mods\SpecialK</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)\bin\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories);C:\users\andon\documents\My Mods\SpecialK\</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>res\exports.def</ModuleDefinitionFile>
       <LargeAddressAware>true</LargeAddressAware>
       <DataExecutionPrevention>false</DataExecutionPrevention>
       <CreateHotPatchableImage>ItaniumImage</CreateHotPatchableImage>
       <FullProgramDatabaseFile>true</FullProgramDatabaseFile>
       <AdditionalDependencies>SpecialK32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <FxCompile>
+      <ShaderModel>4.0</ShaderModel>
+      <ObjectFileOutput>$(SolutionDir)res\%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <PreBuildEvent>
+      <Command>tools\verbuild res\version.h *.*.*.+ -xFP -b0.0.0.0 -s</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='dxgi|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>false</SDLCheck>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <AdditionalIncludeDirectories>$(SolutionDir)res;$(SolutionDir)source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;WIN32_LEAN_AND_MEAN;NOMINMAX;_GDI32_;WINSOCK_API_LINKAGE=;NDEBUG;%(PreprocessorDefinitions);IMGUI_DISABLE_OBSOLETE_FUNCTIONS;__RESHADE_DXGI</PreprocessorDefinitions>
+      <DisableSpecificWarnings>4351;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <AdditionalOptions>/std:c++latest %(AdditionalOptions)</AdditionalOptions>
+      <CreateHotpatchableImage>true</CreateHotpatchableImage>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <FloatingPointExceptions>false</FloatingPointExceptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(SolutionDir)\bin\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories);C:\users\andon\documents\My Mods\SpecialK\</AdditionalLibraryDirectories>
+      <ModuleDefinitionFile>res\exports.def</ModuleDefinitionFile>
+      <LargeAddressAware>true</LargeAddressAware>
+      <DataExecutionPrevention>false</DataExecutionPrevention>
+      <CreateHotPatchableImage>ItaniumImage</CreateHotPatchableImage>
+      <FullProgramDatabaseFile>true</FullProgramDatabaseFile>
+      <AdditionalDependencies>SpecialK32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <FxCompile>
+      <ShaderModel>4.0</ShaderModel>
+      <ObjectFileOutput>$(SolutionDir)res\%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <PreBuildEvent>
+      <Command>tools\verbuild res\version.h *.*.*.+ -xFP -b0.0.0.0 -s</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='FAR|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>false</SDLCheck>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <AdditionalIncludeDirectories>$(SolutionDir)res;$(SolutionDir)source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;WIN32_LEAN_AND_MEAN;NOMINMAX;_GDI32_;WINSOCK_API_LINKAGE=;NDEBUG;%(PreprocessorDefinitions);IMGUI_DISABLE_OBSOLETE_FUNCTIONS</PreprocessorDefinitions>
+      <DisableSpecificWarnings>4351;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <AdditionalOptions>/std:c++latest %(AdditionalOptions)</AdditionalOptions>
+      <CreateHotpatchableImage>true</CreateHotpatchableImage>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <FloatingPointExceptions>false</FloatingPointExceptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(SolutionDir)\bin\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories);F:\SteamLibrary\steamapps\common\FINAL FANTASY FFX&amp;FFX-2 HD Remaster\</AdditionalLibraryDirectories>
+      <ModuleDefinitionFile>res\exports.def</ModuleDefinitionFile>
+      <LargeAddressAware>true</LargeAddressAware>
+      <DataExecutionPrevention>false</DataExecutionPrevention>
+      <CreateHotPatchableImage>ItaniumImage</CreateHotPatchableImage>
+      <FullProgramDatabaseFile>true</FullProgramDatabaseFile>
+      <AdditionalDependencies>dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <FxCompile>
+      <ShaderModel>4.0</ShaderModel>
+      <ObjectFileOutput>$(SolutionDir)res\%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <PreBuildEvent>
+      <Command>tools\verbuild res\version.h *.*.*.+ -xFP -b0.0.0.0 -s</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='UnX|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>false</SDLCheck>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <AdditionalIncludeDirectories>$(SolutionDir)res;$(SolutionDir)source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;WIN32_LEAN_AND_MEAN;NOMINMAX;_GDI32_;WINSOCK_API_LINKAGE=;NDEBUG;%(PreprocessorDefinitions);IMGUI_DISABLE_OBSOLETE_FUNCTIONS</PreprocessorDefinitions>
+      <DisableSpecificWarnings>4351;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <AdditionalOptions>/std:c++latest %(AdditionalOptions)</AdditionalOptions>
+      <CreateHotpatchableImage>true</CreateHotpatchableImage>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <FloatingPointExceptions>false</FloatingPointExceptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(SolutionDir)\bin\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories);F:\SteamLibrary\steamapps\common\FINAL FANTASY FFX&amp;FFX-2 HD Remaster\</AdditionalLibraryDirectories>
+      <ModuleDefinitionFile>res\exports.def</ModuleDefinitionFile>
+      <LargeAddressAware>true</LargeAddressAware>
+      <DataExecutionPrevention>false</DataExecutionPrevention>
+      <CreateHotPatchableImage>ItaniumImage</CreateHotPatchableImage>
+      <FullProgramDatabaseFile>true</FullProgramDatabaseFile>
+      <AdditionalDependencies>dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <FxCompile>
       <ShaderModel>4.0</ShaderModel>
@@ -162,7 +339,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <AdditionalIncludeDirectories>$(SolutionDir)res;$(SolutionDir)source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN64;WIN32_LEAN_AND_MEAN;NOMINMAX;_GDI32_;WINSOCK_API_LINKAGE=;NDEBUG;%(PreprocessorDefinitions);IMGUI_DISABLE_OBSOLETE_FUNCTIONS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WIN64;WIN32;WIN32_LEAN_AND_MEAN;NOMINMAX;_GDI32_;WINSOCK_API_LINKAGE=;NDEBUG;%(PreprocessorDefinitions);IMGUI_DISABLE_OBSOLETE_FUNCTIONS</PreprocessorDefinitions>
       <DisableSpecificWarnings>4351;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -176,10 +353,11 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(SolutionDir)\bin\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories);C:\Users\andon\Documents\My Mods\SpecialK</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)\bin\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories);C:\users\andon\documents\my mods\SpecialK\</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>res\exports.def</ModuleDefinitionFile>
       <LargeAddressAware>true</LargeAddressAware>
       <DataExecutionPrevention>false</DataExecutionPrevention>
+      <CreateHotPatchableImage>ItaniumImage</CreateHotPatchableImage>
       <FullProgramDatabaseFile>true</FullProgramDatabaseFile>
       <AdditionalDependencies>SpecialK64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
@@ -188,7 +366,133 @@
       <ObjectFileOutput>$(SolutionDir)res\%(Filename).cso</ObjectFileOutput>
     </FxCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>WIN64;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WIN64;WIN32;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <PreBuildEvent>
+      <Command>tools\verbuild res\version.h *.*.*.+ -xFP -b0.0.0.0 -s</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='dxgi|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>false</SDLCheck>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <AdditionalIncludeDirectories>$(SolutionDir)res;$(SolutionDir)source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;WIN32_LEAN_AND_MEAN;NOMINMAX;_GDI32_;WINSOCK_API_LINKAGE=;NDEBUG;%(PreprocessorDefinitions);IMGUI_DISABLE_OBSOLETE_FUNCTIONS;__RESHADE_DXGI</PreprocessorDefinitions>
+      <DisableSpecificWarnings>4351;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <AdditionalOptions>/std:c++latest %(AdditionalOptions)</AdditionalOptions>
+      <CreateHotpatchableImage>true</CreateHotpatchableImage>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <FloatingPointExceptions>false</FloatingPointExceptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(SolutionDir)\bin\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories);C:\users\andon\documents\my mods\SpecialK\</AdditionalLibraryDirectories>
+      <ModuleDefinitionFile>res\exports.def</ModuleDefinitionFile>
+      <LargeAddressAware>true</LargeAddressAware>
+      <DataExecutionPrevention>false</DataExecutionPrevention>
+      <CreateHotPatchableImage>ItaniumImage</CreateHotPatchableImage>
+      <FullProgramDatabaseFile>true</FullProgramDatabaseFile>
+      <AdditionalDependencies>SpecialK64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <FxCompile>
+      <ShaderModel>4.0</ShaderModel>
+      <ObjectFileOutput>$(SolutionDir)res\%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <PreBuildEvent>
+      <Command>tools\verbuild res\version.h *.*.*.+ -xFP -b0.0.0.0 -s</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='FAR|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>false</SDLCheck>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <AdditionalIncludeDirectories>$(SolutionDir)res;$(SolutionDir)source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;WIN32_LEAN_AND_MEAN;NOMINMAX;_GDI32_;WINSOCK_API_LINKAGE=;NDEBUG;%(PreprocessorDefinitions);IMGUI_DISABLE_OBSOLETE_FUNCTIONS</PreprocessorDefinitions>
+      <DisableSpecificWarnings>4351;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <AdditionalOptions>/std:c++latest %(AdditionalOptions)</AdditionalOptions>
+      <CreateHotpatchableImage>true</CreateHotpatchableImage>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <FloatingPointExceptions>false</FloatingPointExceptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(SolutionDir)\bin\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories);C:\Program Files (x86)\Steam\SteamApps\common\NieRAutomata\</AdditionalLibraryDirectories>
+      <ModuleDefinitionFile>res\exports.def</ModuleDefinitionFile>
+      <LargeAddressAware>true</LargeAddressAware>
+      <DataExecutionPrevention>false</DataExecutionPrevention>
+      <CreateHotPatchableImage>ItaniumImage</CreateHotPatchableImage>
+      <FullProgramDatabaseFile>true</FullProgramDatabaseFile>
+      <AdditionalDependencies>dinput8.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <FxCompile>
+      <ShaderModel>4.0</ShaderModel>
+      <ObjectFileOutput>$(SolutionDir)res\%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <PreBuildEvent>
+      <Command>tools\verbuild res\version.h *.*.*.+ -xFP -b0.0.0.0 -s</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='UnX|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>false</SDLCheck>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <AdditionalIncludeDirectories>$(SolutionDir)res;$(SolutionDir)source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;WIN32_LEAN_AND_MEAN;NOMINMAX;_GDI32_;WINSOCK_API_LINKAGE=;NDEBUG;%(PreprocessorDefinitions);IMGUI_DISABLE_OBSOLETE_FUNCTIONS</PreprocessorDefinitions>
+      <DisableSpecificWarnings>4351;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <AdditionalOptions>/std:c++latest %(AdditionalOptions)</AdditionalOptions>
+      <CreateHotpatchableImage>true</CreateHotpatchableImage>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <FloatingPointExceptions>false</FloatingPointExceptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(SolutionDir)\bin\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories);F:\SteamLibrary\steamapps\common\FINAL FANTASY FFX&amp;FFX-2 HD Remaster\</AdditionalLibraryDirectories>
+      <ModuleDefinitionFile>res\exports.def</ModuleDefinitionFile>
+      <LargeAddressAware>true</LargeAddressAware>
+      <DataExecutionPrevention>false</DataExecutionPrevention>
+      <CreateHotPatchableImage>ItaniumImage</CreateHotPatchableImage>
+      <FullProgramDatabaseFile>true</FullProgramDatabaseFile>
+      <AdditionalDependencies>dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <FxCompile>
+      <ShaderModel>4.0</ShaderModel>
+      <ObjectFileOutput>$(SolutionDir)res\%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
     <PreBuildEvent>
       <Command>tools\verbuild res\version.h *.*.*.+ -xFP -b0.0.0.0 -s</Command>

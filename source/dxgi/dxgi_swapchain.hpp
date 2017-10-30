@@ -7,32 +7,44 @@
 
 #include "dxgi.hpp"
 
-struct DXGISwapChain : IDXGISwapChain3
+struct DXGISwapChain : IDXGISwapChain4
 {
 	DXGISwapChain(D3D10Device *device, IDXGISwapChain *original, const std::shared_ptr<reshade::runtime> &runtime) :
 		_orig(original),
 		_interface_version(0),
 		_direct3d_device(device),
 		_direct3d_version(10),
-		_runtime(runtime) { }
+		_runtime(runtime) {
+    _orig->AddRef (), 
+    InterlockedExchange (&_ref, _orig->Release ()); 
+  }
 	DXGISwapChain(D3D10Device *device, IDXGISwapChain1 *original, const std::shared_ptr<reshade::runtime> &runtime) :
 		_orig(original),
 		_interface_version(1),
 		_direct3d_device(device),
 		_direct3d_version(10),
-		_runtime(runtime) { }
+		_runtime(runtime) {
+    _orig->AddRef (), 
+    InterlockedExchange (&_ref, _orig->Release ()); 
+  }
 	DXGISwapChain(D3D11Device *device, IDXGISwapChain *original, const std::shared_ptr<reshade::runtime> &runtime) :
 		_orig(original),
 		_interface_version(0),
 		_direct3d_device(device),
 		_direct3d_version(11),
-		_runtime(runtime) { }
+		_runtime(runtime) {
+    _orig->AddRef (), 
+    InterlockedExchange (&_ref, _orig->Release ()); 
+  }
 	DXGISwapChain(D3D11Device *device, IDXGISwapChain1 *original, const std::shared_ptr<reshade::runtime> &runtime) :
 		_orig(original),
 		_interface_version(1),
 		_direct3d_device(device),
 		_direct3d_version(11),
-		_runtime(runtime) { }
+		_runtime(runtime) {
+    _orig->AddRef (), 
+    InterlockedExchange (&_ref, _orig->Release ()); 
+  }
 
 	DXGISwapChain(const DXGISwapChain &) = delete;
 	DXGISwapChain &operator=(const DXGISwapChain &) = delete;
@@ -91,8 +103,11 @@ struct DXGISwapChain : IDXGISwapChain3
 	virtual HRESULT STDMETHODCALLTYPE SetColorSpace1(DXGI_COLOR_SPACE_TYPE ColorSpace) override;
 	virtual HRESULT STDMETHODCALLTYPE ResizeBuffers1(UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT Format, UINT SwapChainFlags, const UINT *pCreationNodeMask, IUnknown *const *ppPresentQueue) override;
 	#pragma endregion
+	#pragma region IDXGISwapChain4
+	virtual HRESULT STDMETHODCALLTYPE SetHDRMetaData(DXGI_HDR_METADATA_TYPE Type,UINT Size,void *pMetaData) override;
+	#pragma endregion
 
-	LONG _ref = 1;
+	volatile LONG _ref = 1;
 	IDXGISwapChain *_orig;
 	unsigned int _interface_version;
 	IUnknown *const _direct3d_device;

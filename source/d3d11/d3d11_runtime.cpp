@@ -12,6 +12,7 @@
 #include "..\deps\imgui\imgui.h"
 #include <algorithm>
 #include <map>
+#include <mutex>
 #include <atlbase.h>
 
 
@@ -74,30 +75,35 @@ SK_ReShade_PresentCallbackD3D11 (void *user)
 }
 
 void
+__stdcall
 SK_ReShade_OnCopyResourceCallbackD3D11 (void* user, ID3D11Resource *&dest, ID3D11Resource *&source)
 {
   ((reshade::d3d11::d3d11_runtime *)user)->on_copy_resource (dest, source);
 }
 
 void
+__stdcall
 SK_ReShade_OnClearDepthStencilViewD3D11 (void* user, ID3D11DepthStencilView *&depthstencil)
 {
   ((reshade::d3d11::d3d11_runtime *)user)->on_clear_depthstencil_view (depthstencil);
 }
 
 void
+__stdcall
 SK_ReShade_OnGetDepthStencilViewD3D11 (void* user, ID3D11DepthStencilView *&depthstencil)
 {
   ((reshade::d3d11::d3d11_runtime *)user)->on_get_depthstencil_view (depthstencil);
 }
 
 void
+__stdcall
 SK_ReShade_OnSetDepthStencilViewD3D11 (void* user, ID3D11DepthStencilView *&depthstencil)
 {
   ((reshade::d3d11::d3d11_runtime *)user)->on_set_depthstencil_view (depthstencil);
 }
 
 void
+__stdcall
 SK_ReShade_OnDrawD3D11 (void* user, ID3D11DeviceContext *context, unsigned int vertices)
 {
   ((reshade::d3d11::d3d11_runtime *)user)->on_draw_call (context, vertices);
@@ -460,7 +466,7 @@ namespace reshade::d3d11
 
 	bool
 	d3d11_runtime::on_init (const DXGI_SWAP_CHAIN_DESC &desc)
-	{
+  {
 		_width                    = desc.BufferDesc.Width;
 		_height                   = desc.BufferDesc.Height;
 		_backbuffer_format        = desc.BufferDesc.Format;
@@ -502,8 +508,10 @@ namespace reshade::d3d11
 		_backbuffer_rtv [1].reset           ();
 		_backbuffer_rtv [2].reset           ();
 
-		_depthstencil.reset             ();
-		_depthstencil_replacement.reset ();
+		_depthstencil.reset                 ();
+		_depthstencil_replacement.reset     ();
+    for ( auto it : _depth_source_table ) it.first->Release  ();
+		                _depth_source_table.clear           ();
 		_depthstencil_texture.reset         ();
 		_depthstencil_texture_srv.reset     ();
 
@@ -549,7 +557,7 @@ namespace reshade::d3d11
       //SK_ReShade_InstallSetDepthStencilViewCallback   (SK_ReShade_OnSetDepthStencilViewD3D11,   this);
       //SK_ReShade_InstallGetDepthStencilViewCallback   (SK_ReShade_OnGetDepthStencilViewD3D11,   this);
       //SK_ReShade_InstallClearDepthStencilViewCallback (SK_ReShade_OnClearDepthStencilViewD3D11, this);
-      //SK_ReShade_InstallDrawCallback                  (SK_ReShade_OnDrawD3D11,                  this);
+      SK_ReShade_InstallDrawCallback                  (SK_ReShade_OnDrawD3D11,                  this);
 
       first = false;
     }
@@ -610,7 +618,7 @@ namespace reshade::d3d11
           D3D11_RENDER_TARGET_VIEW_DESC rt_desc =  { };
                           it->GetDesc (&rt_desc);
 
-          if (/*rt_desc.Format == bb_desc.Format && */rt_desc.Texture2D.MipSlice == 0)
+          if (/*make_format_typeless (rt_desc.Format) == make_format_typeless (bb_desc.Format) && */rt_desc.Texture2D.MipSlice == 0)
           {
             CComPtr   <ID3D11Resource >          pRTVRes = nullptr;
                                it->GetResource (&pRTVRes);
@@ -693,28 +701,29 @@ namespace reshade::d3d11
         
           _immediate_context->RSSetState (_effect_rasterizer_state.get ());
         
-          {
+          int techs =
             on_present_effect ();
+        
+          if (techs > 0)
+          {
+            _immediate_context->CopyResource (_backbuffer_texture.get (), _backbuffer_resolved.get ());
+            _immediate_context->OMSetRenderTargets (1, &pRTV, nullptr);
+
+            _immediate_context->IASetPrimitiveTopology (D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+            _immediate_context->IASetInputLayout       (nullptr);
+            _immediate_context->IASetVertexBuffers     (0, 1, reinterpret_cast<ID3D11Buffer *const *>(&null), reinterpret_cast<const UINT *>(&null), reinterpret_cast<const UINT *>(&null));
+            
+            _immediate_context->RSSetState  (_effect_rasterizer_state.get ());
+            
+            _immediate_context->VSSetShader (_copy_vertex_shader.get (), nullptr, 0);
+            _immediate_context->PSSetShader (_copy_pixel_shader.get  (), nullptr, 0);
+            
+            const auto srv = _backbuffer_texture_srv [make_format_srgb(_backbuffer_format) == _backbuffer_format].get();
+            _immediate_context->PSSetSamplers        (0, 1, &sst);
+            _immediate_context->PSSetShaderResources (0, 1, &srv);
+        
+            _immediate_context->Draw                 (3, 0);
           }
-        
-          _immediate_context->CopyResource       (_backbuffer_texture.get (), _backbuffer_resolved.get ());
-          _immediate_context->OMSetRenderTargets (1, &pRTV, nullptr);
-          
-          
-          _immediate_context->IASetPrimitiveTopology (D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-          _immediate_context->IASetInputLayout       (nullptr);
-          _immediate_context->IASetVertexBuffers     (0, 1, reinterpret_cast<ID3D11Buffer *const *>(&null), reinterpret_cast<const UINT *>(&null), reinterpret_cast<const UINT *>(&null));
-          
-          _immediate_context->RSSetState  (_effect_rasterizer_state.get ());
-          
-          _immediate_context->VSSetShader (_copy_vertex_shader.get (), nullptr, 0);
-          _immediate_context->PSSetShader (_copy_pixel_shader.get  (), nullptr, 0);
-          
-          const auto srv = _backbuffer_texture_srv [make_format_srgb(_backbuffer_format) == _backbuffer_format].get();
-          _immediate_context->PSSetSamplers        (0, 1, &sst);
-          _immediate_context->PSSetShaderResources (0, 1, &srv);
-        
-          _immediate_context->Draw                 (3, 0);
 
           // Apply previous device state
           _stateblock.apply_and_release ();
@@ -727,7 +736,7 @@ namespace reshade::d3d11
 
     else
     {
-      detect_depth_source ();
+		  detect_depth_source ();
 
 		  // Apply presenting
 		  runtime::on_present ();
@@ -775,10 +784,10 @@ namespace reshade::d3d11
 		      _immediate_context->VSSetSamplers (0, static_cast <UINT> (_effect_sampler_states.size ()), _effect_sampler_states.data ());
 		      _immediate_context->PSSetSamplers (0, static_cast <UINT> (_effect_sampler_states.size ()), _effect_sampler_states.data ());
 
-		      on_present_effect ();
+		      int techs = on_present_effect ();
 
 		      // Copy to back buffer
-		      if (_backbuffer_resolved != _backbuffer)
+		      if (techs > 0 && _backbuffer_resolved != _backbuffer)
 		      {
 		      	_immediate_context->CopyResource(_backbuffer_texture.get(), _backbuffer_resolved.get());
 
@@ -1005,9 +1014,6 @@ namespace reshade::d3d11
 	{
 		if ( (! _depth_source_table.count (depthstencil)) || _depth_source_table [depthstencil].invalidated )
 		{
-			// Replace instead of insert
-			bool invalidated = (_depth_source_table.count (depthstencil));
-
 			D3D11_TEXTURE2D_DESC texture_desc = { };
 
 			com_ptr <ID3D11Resource>  resource = nullptr;
@@ -1254,8 +1260,6 @@ namespace reshade::d3d11
     }
 #endif
 
-
-
 		bool is_default_depthstencil_cleared = false;
 
 		// Setup shader constants
@@ -1415,11 +1419,11 @@ namespace reshade::d3d11
 			const auto  depthstencil      = it->first;
 			      auto &depthstencil_info = it->second;
 
-			if ((depthstencil->AddRef (), depthstencil->Release ()) == 1)
+			if ((! depthstencil_info.invalidated) && (depthstencil->AddRef (), depthstencil->Release ()) == 1)
 			{
+				depthstencil_info.invalidated = TRUE;
 				depthstencil->Release ();
 
-				depthstencil_info.invalidated = TRUE;
 				++it;
 
 				continue;
@@ -1444,27 +1448,22 @@ namespace reshade::d3d11
 			depthstencil_info.drawcall_count = depthstencil_info.vertices_count = 0;
 		}
 
-    static int iters = 0;
+    static int overload_iters = 0;
 
-    if (! (++iters % 1000))
-    {
-		  std::map <ID3D11DepthStencilView *, depth_source_info> live_views;
+		if (_depth_source_table.load_factor () > 0.75f && (! (overload_iters++ % 15)))
+		{
+			concurrency::concurrent_unordered_map <ID3D11DepthStencilView *, depth_source_info> live_map;
 
-		  // Trim the table
-		  for (auto it : _depth_source_table)
-		  {
-		  	if (! it.second.invalidated)
-		  	{
-		  		live_views.emplace (it.first, it.second);
-		  	}
-		  }
-      
-		  _depth_source_table.clear ();
-      
-		  for (auto it : live_views)
-		  {
-		  	_depth_source_table.insert (std::make_pair (it.first, it.second));
-		  }
+			// Trim the table
+			for (auto& it : _depth_source_table)
+			{
+				if (! it.second.invalidated)
+				{
+					live_map.insert (std::make_pair (it.first, it.second));
+				}
+			}
+
+			_depth_source_table.swap (live_map);
 		}
 
 		if (best_match != nullptr && _depthstencil != best_match)
